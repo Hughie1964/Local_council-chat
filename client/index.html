@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UK Council Money Market Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 47.4% 11.2%;
+      
+      --primary: 216 100% 35%;
+      --primary-foreground: 0 0% 100%;
+      
+      --secondary: 210 11% 45%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      
+      --accent: 142 70% 40%;
+      --accent-foreground: 0 0% 100%;
+      
+      --muted: 210 10% 95%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 47.4% 11.2%;
+      
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 47.4% 11.2%;
+      
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 216 100% 35%;
+      
+      --destructive: 0 100% 50%;
+      --destructive-foreground: 210 40% 98%;
+      
+      --radius: 0.5rem;
+    }
+    
+    .chat-bubble-user {
+      max-width: 80%;
+      word-wrap: break-word;
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-radius: 18px 18px 0 18px;
+    }
+    
+    .chat-bubble-ai {
+      max-width: 80%;
+      word-wrap: break-word;
+      background-color: #f0f2f5;
+      color: hsl(var(--foreground));
+      border-radius: 18px 18px 18px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
