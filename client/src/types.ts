@@ -25,3 +25,10 @@ export interface ChatResponse {
   message: string;
   sessionId: string;
 }
+
+export interface Rate {
+  name: string;
+  value: string;
+  lastUpdated: string;
+  source: string;
+}
