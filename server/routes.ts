@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateChatResponse, generateSessionTitle } from "./openai";
+import { scrapeUKRates } from "./rates-scraper";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { insertMessageSchema } from "@shared/schema";
@@ -69,6 +70,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get current UK money market rates
+  app.get("/api/rates", async (_req: Request, res: Response) => {
+    try {
+      const rates = await scrapeUKRates();
+      res.json({ rates });
+    } catch (error) {
+      console.error("Error fetching UK money market rates:", error);
+      res.status(500).json({ message: "Failed to fetch current market rates" });
     }
   });
 

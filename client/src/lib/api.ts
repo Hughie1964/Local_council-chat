@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/queryClient";
-import { ChatResponse, Message } from "@/types";
+import { ChatResponse, Message, Rate } from "@/types";
 
 export const sendMessage = async (message: string, sessionId?: string): Promise<ChatResponse> => {
   try {
@@ -78,6 +78,23 @@ export const createNewSession = async (): Promise<{ sessionId: string }> => {
     return await response.json();
   } catch (error) {
     console.error("Failed to create new session:", error);
+    throw error;
+  }
+};
+
+export const getCurrentRates = async (): Promise<{ rates: Rate[] }> => {
+  try {
+    const response = await fetch("/api/rates", {
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      throw new Error(`${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to get current UK money market rates:", error);
     throw error;
   }
 };
