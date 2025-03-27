@@ -18,5 +18,24 @@ export function useIsMobile() {
   return !!isMobile
 }
 
-// Export useIsMobile as useMediaQuery for compatibility
-export const useMediaQuery = useIsMobile;
+// Enhanced useMediaQuery that accepts a media query string
+export function useMediaQuery(query?: string) {
+  const [matches, setMatches] = React.useState<boolean | undefined>(undefined)
+  
+  React.useEffect(() => {
+    // If no query is provided, default to mobile breakpoint
+    const mediaQuery = query || `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
+    
+    const mql = window.matchMedia(mediaQuery)
+    const onChange = () => {
+      setMatches(mql.matches)
+    }
+    
+    mql.addEventListener("change", onChange)
+    setMatches(mql.matches)
+    
+    return () => mql.removeEventListener("change", onChange)
+  }, [query])
+
+  return !!matches
+}

@@ -1,14 +1,16 @@
 import { FC } from "react";
-import { Menu } from "lucide-react";
+import { Menu, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   toggleSidebar: () => void;
+  toggleRatesPanel?: () => void;
 }
 
-export const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
+export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
 
   return (
     <header className="bg-white border-b border-neutral-300 py-3 px-4 shadow-sm">
@@ -37,6 +39,7 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
             </p>
           </div>
         </div>
+        
         {!isMobile && (
           <div className="hidden md:flex items-center space-x-4">
             <a
@@ -59,14 +62,29 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
             </a>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={toggleSidebar}
-        >
-          <Menu className="h-6 w-6" />
-        </Button>
+        
+        <div className="flex items-center space-x-2">
+          {isTablet && toggleRatesPanel && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleRatesPanel}
+              className="text-secondary"
+              title="Toggle Rates Panel"
+            >
+              <BarChart className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
     </header>
   );
