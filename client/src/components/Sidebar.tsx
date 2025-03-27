@@ -149,7 +149,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                <a href="https://www.dmo.gov.uk/responsibilities/local-authority-lending/" target="_blank" rel="noopener noreferrer" className="text-sm text-secondary hover:text-primary flex items-center py-1">
                   <FileText className="h-4 w-4 mr-2" />
                   PWLB Lending Facility
                 </a>
