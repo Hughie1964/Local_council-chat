@@ -309,7 +309,13 @@ const GroupChat: React.FC<GroupChatProps> = ({ onSelectChat }) => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onSelectChat && onSelectChat(group.id)}
+                    onClick={() => {
+                      // Call the onSelectChat callback for any component logic
+                      if (onSelectChat) onSelectChat(group.id);
+                      
+                      // Navigate to the group chat detail page
+                      window.location.href = `/groups/${group.id}`;
+                    }}
                   >
                     Join Chat
                   </Button>
