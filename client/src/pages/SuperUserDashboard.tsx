@@ -57,16 +57,20 @@ export const SuperUserDashboard: FC = () => {
     const fetchTrades = async () => {
       setLoading(true);
       try {
-        let url = '/api/trades';
-        if (activeTab !== 'all') {
-          url += `?status=${activeTab}`;
-        }
-        const response = await axios.get(url);
+        // Always fetch all trades to ensure we have data for all tabs
+        // This prevents issues with tabs not showing data
+        const response = await axios.get('/api/trades');
         
         // Set trades directly without any transformation
         // to avoid date serialization issues
-        console.log('Fetched trades:', response.data);
-        setTrades(response.data);
+        console.log('Fetched all trades:', response.data);
+        console.log('Number of executed trades:', response.data.filter(t => t.status === 'executed').length);
+        
+        if (response.data && response.data.length > 0) {
+          setTrades(response.data);
+        } else {
+          console.error('Received empty trade data from API');
+        }
       } catch (error) {
         console.error('Error fetching trades:', error);
         toast({
@@ -80,7 +84,7 @@ export const SuperUserDashboard: FC = () => {
     };
 
     fetchTrades();
-  }, [activeTab, toast]);
+  }, [toast]); // Remove activeTab dependency since we're always fetching all trades
 
   // Handle trade approval or status change
   const handleApproval = async (tradeId: number, status: 'pending' | 'approved' | 'rejected') => {
