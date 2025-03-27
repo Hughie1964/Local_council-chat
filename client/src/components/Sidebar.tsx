@@ -1,10 +1,11 @@
 import { FC, useEffect, useState } from "react";
+import { Link } from "wouter";
 import { Session, Council } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRecentConversations, getCouncilInfo, createNewSession } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Info, Plus } from "lucide-react";
+import { FileText, Info, Plus, Users, UserPlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface SidebarProps {
@@ -107,6 +108,26 @@ export const Sidebar: FC<SidebarProps> = ({
               ) : (
                 <li className="text-sm p-2">No recent conversations</li>
               )}
+            </ul>
+          </div>
+
+          <div className="mb-6">
+            <h2 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">
+              Community
+            </h2>
+            <ul className="space-y-1">
+              <li>
+                <Link href="/groups" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                  <Users className="h-4 w-4 mr-2" />
+                  Group Chats
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Join Community
+                </Link>
+              </li>
             </ul>
           </div>
 

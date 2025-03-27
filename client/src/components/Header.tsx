@@ -43,22 +43,22 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
         {!isMobile && (
           <div className="hidden md:flex items-center space-x-4">
             <a
-              href="#"
+              href="/"
               className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
             >
-              Dashboard
+              AI Chat
             </a>
             <a
-              href="#"
+              href="/groups"
               className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
             >
-              Resources
+              Group Chats
             </a>
             <a
-              href="#"
+              href="/signup"
               className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
             >
-              Help
+              Join Community
             </a>
           </div>
         )}
