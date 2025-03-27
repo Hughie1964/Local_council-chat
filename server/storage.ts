@@ -95,9 +95,26 @@ export class MemStorage implements IStorage {
     // Create executed trades with different rates and timestamps
     const now = new Date();
     
+    // Function to format a date to string in UK format: DD.M.YYYY
+    const formatDateString = (date: Date): string => {
+      const day = date.getDate();
+      const month = date.getMonth() + 1; // JS months are 0-indexed
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    };
+
+    // Calculate maturity date based on months or years
+    const calculateMaturityDate = (startDate: Date, periodMonths: number): string => {
+      const maturityDate = new Date(startDate);
+      maturityDate.setMonth(maturityDate.getMonth() + periodMonths);
+      return formatDateString(maturityDate);
+    };
+    
     // First trade from 3 months ago
     const trade1Date = new Date(now);
     trade1Date.setMonth(now.getMonth() - 3);
+    const trade1StartDate = new Date(trade1Date);
+    
     const trade1 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
@@ -106,7 +123,11 @@ export class MemStorage implements IStorage {
       amount: "£5,000,000",
       details: "PWLB borrowing for infrastructure project at 4.25% for 5 years",
       status: "executed",
-      rate: "4.25%"
+      rate: "4.25%",
+      lender: "Public Works Loan Board",
+      borrower: "Birmingham City Council",
+      startDate: formatDateString(trade1StartDate),
+      maturityDate: calculateMaturityDate(trade1StartDate, 60) // 5 years = 60 months
     });
     
     // Update the trade properties directly
@@ -126,6 +147,8 @@ export class MemStorage implements IStorage {
     // Second trade from 2 months ago
     const trade2Date = new Date(now);
     trade2Date.setMonth(now.getMonth() - 2);
+    const trade2StartDate = new Date(trade2Date);
+    
     const trade2 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
@@ -134,7 +157,11 @@ export class MemStorage implements IStorage {
       amount: "£3,000,000",
       details: "MMF Investment with BlackRock at 4.15% short-term",
       status: "executed",
-      rate: "4.15%"
+      rate: "4.15%",
+      lender: "Birmingham City Council",
+      borrower: "BlackRock MMF",
+      startDate: formatDateString(trade2StartDate),
+      maturityDate: calculateMaturityDate(trade2StartDate, 3) // 3 months
     });
     
     // Update the trade properties directly
@@ -152,7 +179,9 @@ export class MemStorage implements IStorage {
     // Third trade from 1 month ago
     const trade3Date = new Date(now);
     trade3Date.setMonth(now.getMonth() - 1);
-    await this.createTrade({
+    const trade3StartDate = new Date(trade3Date);
+    
+    const trade3 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -160,17 +189,30 @@ export class MemStorage implements IStorage {
       amount: "£2,500,000",
       details: "Treasury Bill purchase at 4.35% for 6 months",
       status: "executed",
-      rate: "4.35%"
+      rate: "4.35%",
+      lender: "Birmingham City Council",
+      borrower: "UK Treasury",
+      startDate: formatDateString(trade3StartDate),
+      maturityDate: calculateMaturityDate(trade3StartDate, 6) // 6 months
     });
-    this.trades.get(3).createdAt = trade3Date;
-    this.trades.get(3).updatedAt = trade3Date;
-    this.trades.get(3).approvedBy = 1;
-    this.trades.get(3).approvalComment = "Execution approved and completed";
+    
+    if (trade3) {
+      const updatedTrade3 = this.trades.get(trade3.id);
+      if (updatedTrade3) {
+        updatedTrade3.createdAt = trade3Date;
+        updatedTrade3.updatedAt = trade3Date;
+        updatedTrade3.approvedBy = 1;
+        updatedTrade3.approvalComment = "Execution approved and completed";
+        this.trades.set(trade3.id, updatedTrade3);
+      }
+    }
     
     // Fourth trade from 3 weeks ago
     const trade4Date = new Date(now);
     trade4Date.setDate(now.getDate() - 21);
-    await this.createTrade({
+    const trade4StartDate = new Date(trade4Date);
+    
+    const trade4 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -178,17 +220,30 @@ export class MemStorage implements IStorage {
       amount: "£4,250,000",
       details: "Fixed-term deposit with Barclays at 4.1% for 3 months",
       status: "executed",
-      rate: "4.1%"
+      rate: "4.1%",
+      lender: "Birmingham City Council",
+      borrower: "Barclays Bank",
+      startDate: formatDateString(trade4StartDate),
+      maturityDate: calculateMaturityDate(trade4StartDate, 3) // 3 months
     });
-    this.trades.get(4).createdAt = trade4Date;
-    this.trades.get(4).updatedAt = trade4Date;
-    this.trades.get(4).approvedBy = 1;
-    this.trades.get(4).approvalComment = "Execution approved and completed";
+    
+    if (trade4) {
+      const updatedTrade4 = this.trades.get(trade4.id);
+      if (updatedTrade4) {
+        updatedTrade4.createdAt = trade4Date;
+        updatedTrade4.updatedAt = trade4Date;
+        updatedTrade4.approvedBy = 1;
+        updatedTrade4.approvalComment = "Execution approved and completed";
+        this.trades.set(trade4.id, updatedTrade4);
+      }
+    }
     
     // Fifth trade from 2 weeks ago
     const trade5Date = new Date(now);
     trade5Date.setDate(now.getDate() - 14);
-    await this.createTrade({
+    const trade5StartDate = new Date(trade5Date);
+    
+    const trade5 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -196,17 +251,30 @@ export class MemStorage implements IStorage {
       amount: "£3,750,000",
       details: "Loan to Manchester City Council at 4.45% for 4 months",
       status: "executed",
-      rate: "4.45%"
+      rate: "4.45%",
+      lender: "Birmingham City Council",
+      borrower: "Manchester City Council",
+      startDate: formatDateString(trade5StartDate),
+      maturityDate: calculateMaturityDate(trade5StartDate, 4) // 4 months
     });
-    this.trades.get(5).createdAt = trade5Date;
-    this.trades.get(5).updatedAt = trade5Date;
-    this.trades.get(5).approvedBy = 1;
-    this.trades.get(5).approvalComment = "Execution approved and completed";
+    
+    if (trade5) {
+      const updatedTrade5 = this.trades.get(trade5.id);
+      if (updatedTrade5) {
+        updatedTrade5.createdAt = trade5Date;
+        updatedTrade5.updatedAt = trade5Date;
+        updatedTrade5.approvedBy = 1;
+        updatedTrade5.approvalComment = "Execution approved and completed";
+        this.trades.set(trade5.id, updatedTrade5);
+      }
+    }
     
     // Sixth trade from 1 week ago
     const trade6Date = new Date(now);
     trade6Date.setDate(now.getDate() - 7);
-    await this.createTrade({
+    const trade6StartDate = new Date(trade6Date);
+    
+    const trade6 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -214,17 +282,30 @@ export class MemStorage implements IStorage {
       amount: "£6,000,000",
       details: "PWLB borrowing for capital projects at 4.3% for 7 years",
       status: "executed",
-      rate: "4.3%"
+      rate: "4.3%",
+      lender: "Public Works Loan Board",
+      borrower: "Birmingham City Council",
+      startDate: formatDateString(trade6StartDate),
+      maturityDate: calculateMaturityDate(trade6StartDate, 84) // 7 years = 84 months
     });
-    this.trades.get(6).createdAt = trade6Date;
-    this.trades.get(6).updatedAt = trade6Date;
-    this.trades.get(6).approvedBy = 1;
-    this.trades.get(6).approvalComment = "Execution approved and completed";
+    
+    if (trade6) {
+      const updatedTrade6 = this.trades.get(trade6.id);
+      if (updatedTrade6) {
+        updatedTrade6.createdAt = trade6Date;
+        updatedTrade6.updatedAt = trade6Date;
+        updatedTrade6.approvedBy = 1;
+        updatedTrade6.approvalComment = "Execution approved and completed";
+        this.trades.set(trade6.id, updatedTrade6);
+      }
+    }
     
     // Pending trade from 2 days ago
     const trade7Date = new Date(now);
     trade7Date.setDate(now.getDate() - 2);
-    await this.createTrade({
+    const trade7StartDate = new Date(trade7Date);
+    
+    const trade7 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -232,12 +313,25 @@ export class MemStorage implements IStorage {
       amount: "£4,500,000",
       details: "MMF Investment with Fidelity at 4.2% short-term",
       status: "pending",
-      rate: null
+      rate: null,
+      lender: "Birmingham City Council",
+      borrower: "Fidelity MMF",
+      startDate: formatDateString(trade7StartDate),
+      maturityDate: calculateMaturityDate(trade7StartDate, 3) // 3 months
     });
-    this.trades.get(7).createdAt = trade7Date;
-    this.trades.get(7).updatedAt = trade7Date;
+    
+    if (trade7) {
+      const updatedTrade7 = this.trades.get(trade7.id);
+      if (updatedTrade7) {
+        updatedTrade7.createdAt = trade7Date;
+        updatedTrade7.updatedAt = trade7Date;
+        this.trades.set(trade7.id, updatedTrade7);
+      }
+    }
     
     // Negotiation trade from today
+    const trade8StartDate = new Date(now);
+    
     await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
@@ -246,7 +340,11 @@ export class MemStorage implements IStorage {
       amount: "£5,500,000",
       details: "Fixed-term deposit with Lloyds, discussing rate around 4.15-4.2% for 3 months",
       status: "negotiation",
-      rate: null
+      rate: null,
+      lender: "Birmingham City Council",
+      borrower: "Lloyds Bank",
+      startDate: formatDateString(trade8StartDate),
+      maturityDate: calculateMaturityDate(trade8StartDate, 3) // 3 months
     });
   }
 
@@ -347,12 +445,21 @@ export class MemStorage implements IStorage {
     const id = this.currentTradeId++;
     const now = new Date();
     const trade: Trade = {
-      ...insertTrade,
       id,
+      userId: insertTrade.userId,
+      sessionId: insertTrade.sessionId,
+      messageId: insertTrade.messageId,
+      tradeType: insertTrade.tradeType,
+      amount: insertTrade.amount,
+      details: insertTrade.details,
       status: insertTrade.status || "pending",
       approvalComment: null,
       approvedBy: null,
-      rate: null, // Add rate field with default value
+      rate: insertTrade.rate || null,
+      lender: insertTrade.lender || null,
+      borrower: insertTrade.borrower || null,
+      startDate: insertTrade.startDate || null,
+      maturityDate: insertTrade.maturityDate || null,
       createdAt: now,
       updatedAt: now
     };

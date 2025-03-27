@@ -36,7 +36,12 @@ export const trades = pgTable("trades", {
   status: tradeStatusEnum("status").notNull().default("pending"),
   approvedBy: integer("approved_by"),
   approvalComment: text("approval_comment"),
+  // Additional fields for the trade details
   rate: text("rate"), // Interest rate for the trade
+  lender: text("lender"), // Name of the lender
+  borrower: text("borrower"), // Name of the borrower
+  startDate: text("start_date"), // Start date of the trade
+  maturityDate: text("maturity_date"), // Maturity date of the trade
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -89,6 +94,10 @@ export const insertTradeSchema = createInsertSchema(trades).pick({
   details: true,
   status: true,
   rate: true,
+  lender: true,
+  borrower: true,
+  startDate: true,
+  maturityDate: true
 });
 
 export const updateTradeSchema = createInsertSchema(trades).pick({
@@ -96,6 +105,10 @@ export const updateTradeSchema = createInsertSchema(trades).pick({
   approvedBy: true,
   approvalComment: true,
   rate: true,
+  lender: true,
+  borrower: true,
+  startDate: true,
+  maturityDate: true
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
