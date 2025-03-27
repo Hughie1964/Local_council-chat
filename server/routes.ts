@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Save the user message
-      await storage.createMessage({
+      const savedMessage = await storage.createMessage({
         sessionId,
         content: message,
         isUser: true

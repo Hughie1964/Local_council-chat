@@ -60,6 +60,12 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
             >
               Join Community
             </a>
+            <a
+              href="/super-user-dashboard"
+              className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
+            >
+              Super User Dashboard
+            </a>
           </div>
         )}
         
