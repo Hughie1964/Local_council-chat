@@ -11,7 +11,7 @@ interface Trade {
   amount: string;
   details: string;
   status: 'negotiation' | 'pending' | 'approved' | 'rejected' | 'executed';
-  createdAt: Date;
+  createdAt: string | Date;
   approvedBy?: number;
   approvalComment?: string;
   rate?: string; // Interest rate for the trade
@@ -33,16 +33,6 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
   // Debug
   console.log('Processed trades:', trades);
   console.log('Total trades:', trades.length);
-  if (trades.length > 0) {
-    console.log('Trade:', {
-      id: trades[0].id,
-      status: trades[0].status,
-      rate: trades[0].rate,
-      createdAt: trades[0].createdAt,
-      createdAtType: typeof trades[0].createdAt,
-      details: trades[0].details
-    });
-  }
   console.log('Executed trades:', executedTrades.length);
 
   if (isLoading) {
@@ -53,7 +43,7 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
     );
   }
 
-  if (trades.length === 0 || executedTrades.length === 0) {
+  if (executedTrades.length === 0) {
     return (
       <Alert>
         <AlertDescription>

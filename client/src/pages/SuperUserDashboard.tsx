@@ -63,17 +63,10 @@ export const SuperUserDashboard: FC = () => {
         }
         const response = await axios.get(url);
         
-        // Process the trades to ensure proper date handling
-        const processedTrades = response.data.map((trade: any) => {
-          // Make sure createdAt is a Date object
-          return {
-            ...trade,
-            createdAt: new Date(trade.createdAt)
-          };
-        });
-        
-        console.log('Processed trades:', processedTrades);
-        setTrades(processedTrades);
+        // Set trades directly without any transformation
+        // to avoid date serialization issues
+        console.log('Fetched trades:', response.data);
+        setTrades(response.data);
       } catch (error) {
         console.error('Error fetching trades:', error);
         toast({
