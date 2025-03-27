@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRecentConversations, getCouncilInfo, createNewSession } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Info, Plus, Shield, Users, UserPlus } from "lucide-react";
+import { FileText, Info, Plus, Shield, Users, UserPlus, BarChart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface SidebarProps {
@@ -126,6 +126,12 @@ export const Sidebar: FC<SidebarProps> = ({
                 <Link href="/signup" className="text-sm text-secondary hover:text-primary flex items-center py-1">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Join Community
+                </Link>
+              </li>
+              <li>
+                <Link href="/my-trades" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                  <BarChart className="h-4 w-4 mr-2" />
+                  My Trades
                 </Link>
               </li>
               <li>

@@ -392,8 +392,8 @@ export const SuperUserDashboard: FC = () => {
                       <TabsTrigger value="all-counterparties">All Counterparties</TabsTrigger>
                       {/* Get unique counterparty names */}
                       {Array.from(new Set([
-                        ...trades.map(t => t.lender).filter(Boolean),
-                        ...trades.map(t => t.borrower).filter(Boolean)
+                        ...trades.map(t => t.lender).filter(Boolean) as string[],
+                        ...trades.map(t => t.borrower).filter(Boolean) as string[]
                       ])).map(counterparty => (
                         <TabsTrigger key={counterparty} value={counterparty}>
                           {counterparty}
@@ -450,8 +450,8 @@ export const SuperUserDashboard: FC = () => {
                     
                     {/* Individual counterparty tabs */}
                     {Array.from(new Set([
-                      ...trades.map(t => t.lender).filter(Boolean),
-                      ...trades.map(t => t.borrower).filter(Boolean)
+                      ...trades.map(t => t.lender).filter(Boolean) as string[],
+                      ...trades.map(t => t.borrower).filter(Boolean) as string[]
                     ])).map(counterparty => (
                       <TabsContent key={counterparty} value={counterparty}>
                         <Table>
