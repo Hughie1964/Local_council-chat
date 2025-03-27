@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
+import TradeAnalytics from '@/components/TradeAnalytics';
 
 // Define Trade interface explicitly to avoid import issues
 interface Trade {
@@ -38,6 +39,7 @@ interface Trade {
   createdAt: Date;
   approvedBy?: number;
   approvalComment?: string;
+  rate?: string; // Interest rate for the trade
 }
 
 export const SuperUserDashboard: FC = () => {
@@ -106,10 +108,26 @@ export const SuperUserDashboard: FC = () => {
   // Handle trade execution (mark as executed)
   const handleExecution = async (tradeId: number) => {
     try {
+      // Find the trade to extract rate information if available
+      const trade = trades.find(t => t.id === tradeId);
+      if (!trade) {
+        throw new Error("Trade not found");
+      }
+      
+      // Try to extract rate from details if not already available
+      let rateValue = null;
+      if (!trade.rate) {
+        const rateMatch = trade.details.match(/(\d+\.?\d*)\s*%/);
+        if (rateMatch && rateMatch[1]) {
+          rateValue = rateMatch[1] + '%';
+        }
+      }
+      
       await axios.patch(`/api/trades/${tradeId}`, {
         status: 'executed',
         approvedBy: 1, // Using default super user ID
-        approvalComment: 'Trade executed'
+        approvalComment: 'Trade executed',
+        rate: rateValue || trade.rate // Use extracted rate or existing rate
       });
       
       toast({
@@ -118,8 +136,12 @@ export const SuperUserDashboard: FC = () => {
       });
       
       // Update the trades list
-      setTrades(trades.map(trade => 
-        trade.id === tradeId ? { ...trade, status: 'executed' } : trade
+      setTrades(trades.map(t => 
+        t.id === tradeId ? { 
+          ...t, 
+          status: 'executed',
+          rate: rateValue || t.rate
+        } : t
       ));
     } catch (error) {
       console.error('Error executing trade:', error);
@@ -173,6 +195,7 @@ export const SuperUserDashboard: FC = () => {
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
           <TabsTrigger value="executed">Executed</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="w-full">
@@ -265,6 +288,22 @@ export const SuperUserDashboard: FC = () => {
         </TabsContent>
         
         {/* Other tabs have similar content but filtered by status */}
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Trade Analytics</CardTitle>
+              <CardDescription>
+                Visual analysis of executed trades including rates, types, and time periods
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TradeAnalytics trades={trades} isLoading={loading} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Status-specific tabs */}
         {['negotiation', 'pending', 'approved', 'rejected', 'executed'].map((status) => (
           <TabsContent key={status} value={status}>
             <Card>

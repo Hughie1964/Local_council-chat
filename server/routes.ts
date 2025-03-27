@@ -158,6 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           details: tradeDescription,
           amount: formattedAmount,
           tradeType: formattedType + counterpartyInfo,
+          rate: tradeDetails.rate || null, // Include the interest rate if available
           status: tradeDetails.isConfirmation ? "pending" : "negotiation"
         });
       }

@@ -62,6 +62,174 @@ export class MemStorage implements IStorage {
       role: "super_user",
       councilId: "BCC001"
     });
+    
+    // Create demo data for analytics visualization
+    this.initializeDemoData();
+  }
+  
+  // Create demo data for the analytics dashboard
+  private async initializeDemoData() {
+    // Create example session for demo data
+    const demoSessionId = "demo-session-123";
+    const demoSession = await this.createSession({
+      sessionId: demoSessionId,
+      title: "Demo Financial Discussion"
+    });
+    
+    // Create demo message
+    const demoMessage = await this.createMessage({
+      sessionId: demoSessionId,
+      content: "Demo trade message",
+      isUser: true
+    });
+    
+    // Sample trade types
+    const tradeTypes = [
+      "PWLB Loan",
+      "MMF Investment",
+      "Treasury Bill",
+      "Deposit",
+      "Local Authority Loan"
+    ];
+    
+    // Create executed trades with different rates and timestamps
+    const now = new Date();
+    
+    // First trade from 3 months ago
+    const trade1Date = new Date(now);
+    trade1Date.setMonth(now.getMonth() - 3);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[0],
+      amount: "£5,000,000",
+      details: "PWLB borrowing for infrastructure project at 4.25% for 5 years",
+      status: "executed",
+      rate: "4.25%"
+    });
+    this.trades.get(1).createdAt = trade1Date; // Override timestamps for the demo
+    this.trades.get(1).updatedAt = trade1Date;
+    this.trades.get(1).approvedBy = 1;
+    this.trades.get(1).approvalComment = "Execution approved and completed";
+    
+    // Second trade from 2 months ago
+    const trade2Date = new Date(now);
+    trade2Date.setMonth(now.getMonth() - 2);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[1],
+      amount: "£3,000,000",
+      details: "MMF Investment with BlackRock at 4.15% short-term",
+      status: "executed",
+      rate: "4.15%"
+    });
+    this.trades.get(2).createdAt = trade2Date;
+    this.trades.get(2).updatedAt = trade2Date;
+    this.trades.get(2).approvedBy = 1;
+    this.trades.get(2).approvalComment = "Execution approved and completed";
+    
+    // Third trade from 1 month ago
+    const trade3Date = new Date(now);
+    trade3Date.setMonth(now.getMonth() - 1);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[2],
+      amount: "£2,500,000",
+      details: "Treasury Bill purchase at 4.35% for 6 months",
+      status: "executed",
+      rate: "4.35%"
+    });
+    this.trades.get(3).createdAt = trade3Date;
+    this.trades.get(3).updatedAt = trade3Date;
+    this.trades.get(3).approvedBy = 1;
+    this.trades.get(3).approvalComment = "Execution approved and completed";
+    
+    // Fourth trade from 3 weeks ago
+    const trade4Date = new Date(now);
+    trade4Date.setDate(now.getDate() - 21);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[3],
+      amount: "£4,250,000",
+      details: "Fixed-term deposit with Barclays at 4.1% for 3 months",
+      status: "executed",
+      rate: "4.1%"
+    });
+    this.trades.get(4).createdAt = trade4Date;
+    this.trades.get(4).updatedAt = trade4Date;
+    this.trades.get(4).approvedBy = 1;
+    this.trades.get(4).approvalComment = "Execution approved and completed";
+    
+    // Fifth trade from 2 weeks ago
+    const trade5Date = new Date(now);
+    trade5Date.setDate(now.getDate() - 14);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[4],
+      amount: "£3,750,000",
+      details: "Loan to Manchester City Council at 4.45% for 4 months",
+      status: "executed",
+      rate: "4.45%"
+    });
+    this.trades.get(5).createdAt = trade5Date;
+    this.trades.get(5).updatedAt = trade5Date;
+    this.trades.get(5).approvedBy = 1;
+    this.trades.get(5).approvalComment = "Execution approved and completed";
+    
+    // Sixth trade from 1 week ago
+    const trade6Date = new Date(now);
+    trade6Date.setDate(now.getDate() - 7);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[0],
+      amount: "£6,000,000",
+      details: "PWLB borrowing for capital projects at 4.3% for 7 years",
+      status: "executed",
+      rate: "4.3%"
+    });
+    this.trades.get(6).createdAt = trade6Date;
+    this.trades.get(6).updatedAt = trade6Date;
+    this.trades.get(6).approvedBy = 1;
+    this.trades.get(6).approvalComment = "Execution approved and completed";
+    
+    // Pending trade from 2 days ago
+    const trade7Date = new Date(now);
+    trade7Date.setDate(now.getDate() - 2);
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[1],
+      amount: "£4,500,000",
+      details: "MMF Investment with Fidelity at 4.2% short-term",
+      status: "pending",
+      rate: null
+    });
+    this.trades.get(7).createdAt = trade7Date;
+    this.trades.get(7).updatedAt = trade7Date;
+    
+    // Negotiation trade from today
+    await this.createTrade({
+      userId: 1,
+      sessionId: demoSessionId,
+      messageId: demoMessage.id,
+      tradeType: tradeTypes[3],
+      amount: "£5,500,000",
+      details: "Fixed-term deposit with Lloyds, discussing rate around 4.15-4.2% for 3 months",
+      status: "negotiation",
+      rate: null
+    });
   }
 
   // User methods
@@ -166,6 +334,7 @@ export class MemStorage implements IStorage {
       status: insertTrade.status || "pending",
       approvalComment: null,
       approvedBy: null,
+      rate: null, // Add rate field with default value
       createdAt: now,
       updatedAt: now
     };
