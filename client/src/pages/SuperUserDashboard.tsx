@@ -64,7 +64,7 @@ export const SuperUserDashboard: FC = () => {
         // Set trades directly without any transformation
         // to avoid date serialization issues
         console.log('Fetched all trades:', response.data);
-        console.log('Number of executed trades:', response.data.filter(t => t.status === 'executed').length);
+        console.log('Number of executed trades:', response.data.filter((t: Trade) => t.status === 'executed').length);
         
         if (response.data && response.data.length > 0) {
           setTrades(response.data);
@@ -253,6 +253,7 @@ export const SuperUserDashboard: FC = () => {
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
           <TabsTrigger value="executed">Executed</TabsTrigger>
+          <TabsTrigger value="counterparties">Counterparties</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         
@@ -361,6 +362,146 @@ export const SuperUserDashboard: FC = () => {
                 trades={trades.filter(trade => trade.status === 'executed')} 
                 isLoading={loading} 
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Counterparties Tab */}
+        <TabsContent value="counterparties">
+          <Card>
+            <CardHeader>
+              <CardTitle>Counterparty Trade Log</CardTitle>
+              <CardDescription>
+                View all trades by counterparty organization
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <p>Loading trades...</p>
+                </div>
+              ) : trades.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No trades found</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Create a nested tabs interface for counterparties */}
+                  <Tabs defaultValue="all-counterparties">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="all-counterparties">All Counterparties</TabsTrigger>
+                      {/* Get unique counterparty names */}
+                      {Array.from(new Set([
+                        ...trades.map(t => t.lender).filter(Boolean),
+                        ...trades.map(t => t.borrower).filter(Boolean)
+                      ])).map(counterparty => (
+                        <TabsTrigger key={counterparty} value={counterparty}>
+                          {counterparty}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    
+                    {/* All counterparties tab */}
+                    <TabsContent value="all-counterparties">
+                      <Table>
+                        <TableCaption>Trades by all counterparties</TableCaption>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Counterparty</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Rate</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {trades.map(trade => {
+                            const counterparty = trade.lender && trade.borrower
+                              ? trade.lender === 'Birmingham City Council'
+                                ? trade.borrower
+                                : trade.borrower === 'Birmingham City Council'
+                                  ? trade.lender
+                                  : trade.lender
+                              : 'Unknown';
+                            
+                            // Format rate with % if needed
+                            let rateValue = trade.rate || "N/A";
+                            if (rateValue && !rateValue.includes('%')) {
+                              rateValue = `${rateValue}%`;
+                            }
+                            
+                            return (
+                              <TableRow key={trade.id}>
+                                <TableCell>{trade.id}</TableCell>
+                                <TableCell>{counterparty}</TableCell>
+                                <TableCell>{trade.tradeType}</TableCell>
+                                <TableCell>{trade.amount}</TableCell>
+                                <TableCell>{getStatusBadge(trade.status)}</TableCell>
+                                <TableCell>{formatDate(trade.createdAt)}</TableCell>
+                                <TableCell>{rateValue}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TabsContent>
+                    
+                    {/* Individual counterparty tabs */}
+                    {Array.from(new Set([
+                      ...trades.map(t => t.lender).filter(Boolean),
+                      ...trades.map(t => t.borrower).filter(Boolean)
+                    ])).map(counterparty => (
+                      <TabsContent key={counterparty} value={counterparty}>
+                        <Table>
+                          <TableCaption>Trades with {counterparty}</TableCaption>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>ID</TableHead>
+                              <TableHead>Transaction</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Rate</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {trades
+                              .filter(trade => trade.lender === counterparty || trade.borrower === counterparty)
+                              .map(trade => {
+                                // Format rate with % if needed
+                                let rateValue = trade.rate || "N/A";
+                                if (rateValue && !rateValue.includes('%')) {
+                                  rateValue = `${rateValue}%`;
+                                }
+                                
+                                // Format the transaction in the requested format
+                                const lender = trade.lender || "Unknown";
+                                const borrower = trade.borrower || "Unknown";
+                                const amount = trade.amount.replace(/£/g, "GBP ");
+                                const dateRange = trade.startDate && trade.maturityDate 
+                                  ? `from ${trade.startDate} to ${trade.maturityDate}`
+                                  : "";
+                                
+                                const transaction = `${lender} lends ${amount} to ${borrower} at ${rateValue} ${dateRange}`;
+                                
+                                return (
+                                  <TableRow key={trade.id}>
+                                    <TableCell>{trade.id}</TableCell>
+                                    <TableCell>{transaction}</TableCell>
+                                    <TableCell>{getStatusBadge(trade.status)}</TableCell>
+                                    <TableCell>{formatDate(trade.createdAt)}</TableCell>
+                                    <TableCell>{rateValue}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                          </TableBody>
+                        </Table>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
