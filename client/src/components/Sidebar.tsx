@@ -137,13 +137,13 @@ export const Sidebar: FC<SidebarProps> = ({
             </h2>
             <ul className="space-y-1">
               <li>
-                <a href="#" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                <a href="https://www.cipfa.org/policy-and-guidance/publications/c/code-of-practice-on-treasury-management-fully-digital" target="_blank" rel="noopener noreferrer" className="text-sm text-secondary hover:text-primary flex items-center py-1">
                   <FileText className="h-4 w-4 mr-2" />
                   CIPFA Guidelines
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-secondary hover:text-primary flex items-center py-1">
+                <a href="https://www.cipfa.org/policy-and-guidance/publications/t/treasury-management-in-the-public-services-code-of-practice-and-crosssectoral-guidance-notes-2021-edition" target="_blank" rel="noopener noreferrer" className="text-sm text-secondary hover:text-primary flex items-center py-1">
                   <FileText className="h-4 w-4 mr-2" />
                   Treasury Management Code
                 </a>
