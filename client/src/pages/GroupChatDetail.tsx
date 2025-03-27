@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import Header from "@/components/Header";
 import { 
@@ -12,10 +12,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, ArrowLeft, Send, PaperclipIcon } from "lucide-react";
+import { Users, ArrowLeft, Send, Mic, MicOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
+
+// Add TypeScript interfaces for the Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 interface GroupChatMessage {
   id: string;
@@ -132,6 +140,10 @@ const GroupChatDetail: React.FC = () => {
   const [message, setMessage] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const recognitionRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   // Get group data from mock data
   const defaultGroup: GroupData = {
@@ -146,6 +158,78 @@ const GroupChatDetail: React.FC = () => {
   const group: GroupData = mockGroups[groupId as keyof typeof mockGroups] || defaultGroup;
   
   const [messages, setMessages] = useState<GroupChatMessage[]>(group.messages || []);
+  
+  // Check if speech recognition is supported
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      console.log("Speech recognition not supported in this browser");
+    }
+  }, []);
+
+  // Set up speech recognition
+  useEffect(() => {
+    if (!speechSupported) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognition();
+    
+    // Configure recognition
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = false;
+    recognitionRef.current.lang = 'en-GB'; // Set to British English
+
+    // Set up event handlers
+    recognitionRef.current.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setMessage(current => current + transcript);
+      setIsListening(false);
+    };
+
+    recognitionRef.current.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+      toast({
+        title: "Voice Recognition Error",
+        description: `Error: ${event.error}. Please try again.`,
+        variant: "destructive"
+      });
+    };
+
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [speechSupported]);
+
+  const toggleListening = () => {
+    if (!speechSupported) {
+      toast({
+        title: "Speech Recognition Not Supported",
+        description: "Your browser doesn't support speech recognition. Please try a different browser.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      recognitionRef.current.start();
+      toast({
+        title: "Listening...",
+        description: "Speak now. Voice recording will automatically stop after you pause.",
+      });
+    }
+  };
   
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
@@ -252,19 +336,40 @@ const GroupChatDetail: React.FC = () => {
                 </ScrollArea>
                 
                 <div className="p-4 border-t">
+                  {isListening && (
+                    <div className="bg-primary/10 text-primary text-sm p-2 rounded-md mb-2 flex items-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                      <span>Listening to your voice... Speak clearly.</span>
+                    </div>
+                  )}
+                  
                   <div className="flex">
-                    <Input
-                      placeholder="Type your message..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      className="flex-1"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        ref={inputRef}
+                        placeholder={isListening ? "Listening to your voice..." : "Type your message..."}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
+                        className={`pr-10 w-full border ${isListening ? 'border-primary' : 'border-neutral-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200`}
+                      />
+                      {speechSupported && (
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={toggleListening}
+                          className={`absolute right-3 top-2.5 ${isListening ? 'text-red-500 animate-pulse' : 'text-neutral-400 hover:text-primary'}`}
+                        >
+                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </div>
                     <Button 
                       className="ml-2" 
                       onClick={sendMessage}
@@ -273,6 +378,12 @@ const GroupChatDetail: React.FC = () => {
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
+                  
+                  {speechSupported && (
+                    <div className="mt-2 text-xs text-center text-secondary/70">
+                      Click the microphone icon to use voice commands
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
