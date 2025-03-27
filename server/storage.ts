@@ -110,241 +110,192 @@ export class MemStorage implements IStorage {
       return formatDateString(maturityDate);
     };
     
-    // First trade from 3 months ago
-    const trade1Date = new Date(now);
-    trade1Date.setMonth(now.getMonth() - 3);
-    const trade1StartDate = new Date(trade1Date);
+    // Create specific demo dates for transactions
+    const date1 = new Date(2025, 3, 25); // April 25, 2025
+    const date2 = new Date(2025, 4, 15); // May 15, 2025
+    const date3 = new Date(2025, 5, 10); // June 10, 2025
+    const date4 = new Date(2025, 3, 5);  // April 5, 2025
+    const date5 = new Date(2025, 2, 20); // March 20, 2025
     
+    // Trade 1: Manchester County Council lending to Barclays exactly as requested
     const trade1 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[0],
-      amount: "£5,000,000",
-      details: "PWLB borrowing for infrastructure project at 4.25% for 5 years",
+      tradeType: "Local Authority Loan",
+      amount: "£15,000,000",
+      details: "3-month term loan to Barclays at 4.58%",
       status: "executed",
-      rate: "4.25%",
-      lender: "Public Works Loan Board",
-      borrower: "Birmingham City Council",
-      startDate: formatDateString(trade1StartDate),
-      maturityDate: calculateMaturityDate(trade1StartDate, 60) // 5 years = 60 months
+      rate: "4.58%",
+      lender: "Manchester County Council",
+      borrower: "Barclays Bank Plc",
+      startDate: "25.4.2025",
+      maturityDate: "25.7.2025"
     });
     
-    // Update the trade properties directly
     if (trade1) {
-      // Get the trade from the map to update it directly
       const updatedTrade1 = this.trades.get(trade1.id);
       if (updatedTrade1) {
-        updatedTrade1.createdAt = trade1Date;
-        updatedTrade1.updatedAt = trade1Date;
+        updatedTrade1.createdAt = date1;
+        updatedTrade1.updatedAt = date1;
         updatedTrade1.approvedBy = 1;
         updatedTrade1.approvalComment = "Execution approved and completed";
-        // Save the updated trade back to the map
         this.trades.set(trade1.id, updatedTrade1);
       }
     }
     
-    // Second trade from 2 months ago
-    const trade2Date = new Date(now);
-    trade2Date.setMonth(now.getMonth() - 2);
-    const trade2StartDate = new Date(trade2Date);
-    
+    // Trade 2: Birmingham City Council lending to Lloyds
     const trade2 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[1],
-      amount: "£3,000,000",
-      details: "MMF Investment with BlackRock at 4.15% short-term",
+      tradeType: "Deposit",
+      amount: "£8,500,000",
+      details: "3-month deposit with Lloyds at 4.62%",
       status: "executed",
-      rate: "4.15%",
+      rate: "4.62%",
       lender: "Birmingham City Council",
-      borrower: "BlackRock MMF",
-      startDate: formatDateString(trade2StartDate),
-      maturityDate: calculateMaturityDate(trade2StartDate, 3) // 3 months
+      borrower: "Lloyds Bank Plc",
+      startDate: "15.5.2025",
+      maturityDate: "15.8.2025"
     });
     
-    // Update the trade properties directly
     if (trade2) {
       const updatedTrade2 = this.trades.get(trade2.id);
       if (updatedTrade2) {
-        updatedTrade2.createdAt = trade2Date;
-        updatedTrade2.updatedAt = trade2Date;
+        updatedTrade2.createdAt = date2;
+        updatedTrade2.updatedAt = date2;
         updatedTrade2.approvedBy = 1;
         updatedTrade2.approvalComment = "Execution approved and completed";
         this.trades.set(trade2.id, updatedTrade2);
       }
     }
     
-    // Third trade from 1 month ago
-    const trade3Date = new Date(now);
-    trade3Date.setMonth(now.getMonth() - 1);
-    const trade3StartDate = new Date(trade3Date);
-    
+    // Trade 3: Leeds City Council lending to HSBC
     const trade3 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[2],
-      amount: "£2,500,000",
-      details: "Treasury Bill purchase at 4.35% for 6 months",
+      tradeType: "Deposit",
+      amount: "£10,000,000",
+      details: "6-month deposit with HSBC at 4.75%",
       status: "executed",
-      rate: "4.35%",
-      lender: "Birmingham City Council",
-      borrower: "UK Treasury",
-      startDate: formatDateString(trade3StartDate),
-      maturityDate: calculateMaturityDate(trade3StartDate, 6) // 6 months
+      rate: "4.75%",
+      lender: "Leeds City Council",
+      borrower: "HSBC Bank Plc",
+      startDate: "10.6.2025",
+      maturityDate: "10.12.2025"
     });
     
     if (trade3) {
       const updatedTrade3 = this.trades.get(trade3.id);
       if (updatedTrade3) {
-        updatedTrade3.createdAt = trade3Date;
-        updatedTrade3.updatedAt = trade3Date;
+        updatedTrade3.createdAt = date3;
+        updatedTrade3.updatedAt = date3;
         updatedTrade3.approvedBy = 1;
         updatedTrade3.approvalComment = "Execution approved and completed";
         this.trades.set(trade3.id, updatedTrade3);
       }
     }
     
-    // Fourth trade from 3 weeks ago
-    const trade4Date = new Date(now);
-    trade4Date.setDate(now.getDate() - 21);
-    const trade4StartDate = new Date(trade4Date);
-    
+    // Trade 4: Liverpool City Council lending to Nationwide
     const trade4 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[3],
-      amount: "£4,250,000",
-      details: "Fixed-term deposit with Barclays at 4.1% for 3 months",
+      tradeType: "Deposit",
+      amount: "£7,250,000",
+      details: "3-month deposit with Nationwide at 4.55%",
       status: "executed",
-      rate: "4.1%",
-      lender: "Birmingham City Council",
-      borrower: "Barclays Bank",
-      startDate: formatDateString(trade4StartDate),
-      maturityDate: calculateMaturityDate(trade4StartDate, 3) // 3 months
+      rate: "4.55%",
+      lender: "Liverpool City Council",
+      borrower: "Nationwide Building Society",
+      startDate: "5.4.2025",
+      maturityDate: "5.7.2025"
     });
     
     if (trade4) {
       const updatedTrade4 = this.trades.get(trade4.id);
       if (updatedTrade4) {
-        updatedTrade4.createdAt = trade4Date;
-        updatedTrade4.updatedAt = trade4Date;
+        updatedTrade4.createdAt = date4;
+        updatedTrade4.updatedAt = date4;
         updatedTrade4.approvedBy = 1;
         updatedTrade4.approvalComment = "Execution approved and completed";
         this.trades.set(trade4.id, updatedTrade4);
       }
     }
     
-    // Fifth trade from 2 weeks ago
-    const trade5Date = new Date(now);
-    trade5Date.setDate(now.getDate() - 14);
-    const trade5StartDate = new Date(trade5Date);
-    
+    // Trade 5: PWLB lending to Newcastle City Council
     const trade5 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[4],
-      amount: "£3,750,000",
-      details: "Loan to Manchester City Council at 4.45% for 4 months",
+      tradeType: "PWLB Loan",
+      amount: "£12,500,000",
+      details: "5-year PWLB loan for infrastructure project",
       status: "executed",
       rate: "4.45%",
-      lender: "Birmingham City Council",
-      borrower: "Manchester City Council",
-      startDate: formatDateString(trade5StartDate),
-      maturityDate: calculateMaturityDate(trade5StartDate, 4) // 4 months
+      lender: "Public Works Loan Board",
+      borrower: "Newcastle City Council",
+      startDate: "20.3.2025",
+      maturityDate: "20.3.2030"
     });
     
     if (trade5) {
       const updatedTrade5 = this.trades.get(trade5.id);
       if (updatedTrade5) {
-        updatedTrade5.createdAt = trade5Date;
-        updatedTrade5.updatedAt = trade5Date;
+        updatedTrade5.createdAt = date5;
+        updatedTrade5.updatedAt = date5;
         updatedTrade5.approvedBy = 1;
         updatedTrade5.approvalComment = "Execution approved and completed";
         this.trades.set(trade5.id, updatedTrade5);
       }
     }
     
-    // Sixth trade from 1 week ago
-    const trade6Date = new Date(now);
-    trade6Date.setDate(now.getDate() - 7);
-    const trade6StartDate = new Date(trade6Date);
+    // Pending trade 
+    const pendingDate = new Date(now);
+    pendingDate.setDate(now.getDate() - 2);
     
-    const trade6 = await this.createTrade({
+    const pendingTrade = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[0],
-      amount: "£6,000,000",
-      details: "PWLB borrowing for capital projects at 4.3% for 7 years",
-      status: "executed",
-      rate: "4.3%",
-      lender: "Public Works Loan Board",
-      borrower: "Birmingham City Council",
-      startDate: formatDateString(trade6StartDate),
-      maturityDate: calculateMaturityDate(trade6StartDate, 84) // 7 years = 84 months
-    });
-    
-    if (trade6) {
-      const updatedTrade6 = this.trades.get(trade6.id);
-      if (updatedTrade6) {
-        updatedTrade6.createdAt = trade6Date;
-        updatedTrade6.updatedAt = trade6Date;
-        updatedTrade6.approvedBy = 1;
-        updatedTrade6.approvalComment = "Execution approved and completed";
-        this.trades.set(trade6.id, updatedTrade6);
-      }
-    }
-    
-    // Pending trade from 2 days ago
-    const trade7Date = new Date(now);
-    trade7Date.setDate(now.getDate() - 2);
-    const trade7StartDate = new Date(trade7Date);
-    
-    const trade7 = await this.createTrade({
-      userId: 1,
-      sessionId: demoSessionId,
-      messageId: demoMessage.id,
-      tradeType: tradeTypes[1],
+      tradeType: "MMF Investment",
       amount: "£4,500,000",
       details: "MMF Investment with Fidelity at 4.2% short-term",
       status: "pending",
       rate: null,
       lender: "Birmingham City Council",
       borrower: "Fidelity MMF",
-      startDate: formatDateString(trade7StartDate),
-      maturityDate: calculateMaturityDate(trade7StartDate, 3) // 3 months
+      startDate: formatDateString(pendingDate),
+      maturityDate: calculateMaturityDate(pendingDate, 3) // 3 months
     });
     
-    if (trade7) {
-      const updatedTrade7 = this.trades.get(trade7.id);
-      if (updatedTrade7) {
-        updatedTrade7.createdAt = trade7Date;
-        updatedTrade7.updatedAt = trade7Date;
-        this.trades.set(trade7.id, updatedTrade7);
+    if (pendingTrade) {
+      const updatedPendingTrade = this.trades.get(pendingTrade.id);
+      if (updatedPendingTrade) {
+        updatedPendingTrade.createdAt = pendingDate;
+        updatedPendingTrade.updatedAt = pendingDate;
+        this.trades.set(pendingTrade.id, updatedPendingTrade);
       }
     }
     
-    // Negotiation trade from today
-    const trade8StartDate = new Date(now);
+    // Negotiation trade
+    const negotiationDate = new Date(now);
     
     await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
-      tradeType: tradeTypes[3],
+      tradeType: "Deposit",
       amount: "£5,500,000",
       details: "Fixed-term deposit with Lloyds, discussing rate around 4.15-4.2% for 3 months",
       status: "negotiation",
       rate: null,
       lender: "Birmingham City Council",
       borrower: "Lloyds Bank",
-      startDate: formatDateString(trade8StartDate),
-      maturityDate: calculateMaturityDate(trade8StartDate, 3) // 3 months
+      startDate: formatDateString(negotiationDate),
+      maturityDate: calculateMaturityDate(negotiationDate, 3) // 3 months
     });
   }
 
