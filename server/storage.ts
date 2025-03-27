@@ -30,7 +30,7 @@ export interface IStorage {
   // Trade methods
   createTrade(trade: InsertTrade): Promise<Trade>;
   getTrade(id: number): Promise<Trade | undefined>;
-  getTrades(status?: "pending" | "approved" | "rejected" | "executed"): Promise<Trade[]>;
+  getTrades(status?: "negotiation" | "pending" | "approved" | "rejected" | "executed"): Promise<Trade[]>;
   getUserTrades(userId: number): Promise<Trade[]>;
   updateTradeStatus(tradeId: number, update: UpdateTrade): Promise<Trade | undefined>;
 }
@@ -177,7 +177,7 @@ export class MemStorage implements IStorage {
     return this.trades.get(id);
   }
   
-  async getTrades(status?: "pending" | "approved" | "rejected" | "executed"): Promise<Trade[]> {
+  async getTrades(status?: "negotiation" | "pending" | "approved" | "rejected" | "executed"): Promise<Trade[]> {
     let trades = Array.from(this.trades.values());
     
     if (status) {

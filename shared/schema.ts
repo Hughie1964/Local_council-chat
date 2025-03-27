@@ -6,7 +6,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["user", "admin", "super_user"]);
 
 // Trade status enum
-export const tradeStatusEnum = pgEnum("trade_status", ["pending", "approved", "rejected", "executed"]);
+export const tradeStatusEnum = pgEnum("trade_status", ["negotiation", "pending", "approved", "rejected", "executed"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

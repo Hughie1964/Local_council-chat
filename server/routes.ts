@@ -112,6 +112,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isUser: true
       });
       
+      // Check if the message contains a trade, negotiation, or confirmation
+      const tradeDetails = await analyzeMessageForTrade(message);
+      
+      if (tradeDetails.isTradeRequest) {
+        console.log("Detected trade activity:", tradeDetails);
+        
+        // Prepare trade description with additional details
+        let tradeDescription = tradeDetails.details;
+        
+        // For trade confirmations, create a more detailed description
+        if (tradeDetails.isConfirmation) {
+          tradeDescription = `CONFIRMATION: ${tradeDetails.details}`;
+        } 
+        // For negotiations, specify that this is a price negotiation
+        else if (tradeDetails.isNegotiation) {
+          tradeDescription = `NEGOTIATION: ${tradeDetails.details}`;
+        }
+        
+        // If we have rate information, include it in a structured format
+        let formattedAmount = tradeDetails.amount || "Unknown amount";
+        let formattedType = tradeDetails.tradeType || "Money Market Transaction";
+        
+        // Enhance trade type with period information if available
+        if (tradeDetails.period) {
+          formattedType += ` (${tradeDetails.period})`;
+        }
+        
+        // Enhance amount with rate information if available
+        if (tradeDetails.rate) {
+          formattedAmount += ` at ${tradeDetails.rate}`;
+        }
+        
+        // Add counterparty information if available
+        let counterpartyInfo = "";
+        if (tradeDetails.counterparty) {
+          counterpartyInfo = ` with ${tradeDetails.counterparty}`;
+        }
+        
+        // Store the trade with status based on whether it's a confirmation or negotiation
+        await storage.createTrade({
+          userId: 1, // Default user ID since we don't have auth yet
+          sessionId, // Use the current sessionId
+          messageId: savedMessage.id, // Use the id of the saved message
+          details: tradeDescription,
+          amount: formattedAmount,
+          tradeType: formattedType + counterpartyInfo,
+          status: tradeDetails.isConfirmation ? "pending" : "negotiation"
+        });
+      }
+      
       // Generate AI response
       const aiResponse = await generateChatResponse(message);
       
@@ -150,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all trades with optional status filter
   app.get("/api/trades", async (req: Request, res: Response) => {
     try {
-      const status = req.query.status as "pending" | "approved" | "rejected" | "executed" | undefined;
+      const status = req.query.status as "negotiation" | "pending" | "approved" | "rejected" | "executed" | undefined;
       const trades = await storage.getTrades(status);
       
       res.json(trades);
