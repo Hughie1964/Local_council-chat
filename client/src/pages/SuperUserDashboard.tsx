@@ -40,6 +40,10 @@ interface Trade {
   approvedBy?: number;
   approvalComment?: string;
   rate?: string; // Interest rate for the trade
+  lender?: string;
+  borrower?: string;
+  startDate?: string;
+  maturityDate?: string;
 }
 
 export const SuperUserDashboard: FC = () => {
@@ -134,11 +138,53 @@ export const SuperUserDashboard: FC = () => {
         }
       }
       
+      // Generate lender/borrower information based on trade type if not already set
+      let lender = trade.lender;
+      let borrower = trade.borrower;
+      
+      if (!lender || !borrower) {
+        if (trade.tradeType === 'PWLB Loan') {
+          lender = 'Public Works Loan Board';
+          borrower = 'Birmingham City Council';
+        } else if (trade.tradeType === 'MMF Investment') {
+          lender = 'Birmingham City Council';
+          borrower = 'Money Market Fund';
+        } else if (trade.tradeType === 'Deposit') {
+          lender = 'Birmingham City Council';
+          borrower = 'Barclays Bank';
+        } else if (trade.tradeType === 'Local Authority Loan') {
+          lender = 'Birmingham City Council';
+          borrower = 'Manchester City Council';
+        } else if (trade.tradeType === 'Treasury Bill') {
+          lender = 'Birmingham City Council';
+          borrower = 'UK Treasury';
+        } else {
+          lender = 'Lender';
+          borrower = 'Borrower';
+        }
+      }
+      
+      // Generate start and maturity dates if not already set
+      const today = new Date();
+      const startDate = trade.startDate || `${today.getDate()}.${today.getMonth() + 1}.${today.getFullYear()}`;
+      
+      // Default to 3 months maturity if not specified
+      let maturityDate = trade.maturityDate;
+      if (!maturityDate) {
+        const maturityDateObj = new Date(today);
+        maturityDateObj.setMonth(today.getMonth() + 3);
+        maturityDate = `${maturityDateObj.getDate()}.${maturityDateObj.getMonth() + 1}.${maturityDateObj.getFullYear()}`;
+      }
+      
       await axios.patch(`/api/trades/${tradeId}`, {
         status: 'executed',
         approvedBy: 1, // Using default super user ID
         approvalComment: 'Trade executed',
-        rate: rateValue || trade.rate // Use extracted rate or existing rate
+        rate: rateValue || trade.rate, // Use extracted rate or existing rate
+        lender,
+        borrower,
+        startDate,
+        maturityDate
       });
       
       toast({
@@ -151,7 +197,11 @@ export const SuperUserDashboard: FC = () => {
         t.id === tradeId ? { 
           ...t, 
           status: 'executed',
-          rate: rateValue || t.rate
+          rate: rateValue || t.rate,
+          lender,
+          borrower,
+          startDate,
+          maturityDate
         } : t
       ));
     } catch (error) {

@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Define Trade interface for the analytics component
 interface Trade {
@@ -31,6 +32,10 @@ interface Trade {
   approvedBy?: number;
   approvalComment?: string;
   rate?: string; // Interest rate for the trade
+  lender?: string;
+  borrower?: string;
+  startDate?: string;
+  maturityDate?: string;
 }
 
 // Extracted rate data from trade details
@@ -244,12 +249,91 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="rates" className="w-full">
+      <Tabs defaultValue="trades" className="w-full">
         <TabsList className="mb-4">
+          <TabsTrigger value="trades">Executed Trades</TabsTrigger>
           <TabsTrigger value="rates">Rates Over Time</TabsTrigger>
           <TabsTrigger value="types">Trade Types</TabsTrigger>
           <TabsTrigger value="periods">Rates by Period</TabsTrigger>
         </TabsList>
+        
+        {/* Executed Trades Table */}
+        <TabsContent value="trades">
+          <Card>
+            <CardHeader>
+              <CardTitle>Executed Trades</CardTitle>
+              <CardDescription>
+                All completed and executed trades with full details
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">ID</TableHead>
+                    <TableHead>Transaction</TableHead>
+                    <TableHead className="text-right">Rate</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Period</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {trades
+                    .filter(trade => trade.status === 'executed')
+                    .map((trade) => {
+                      // Extract rate from trade.rate field or from details as a fallback
+                      let rateValue = "N/A";
+                      if (trade.rate) {
+                        const rateMatch = String(trade.rate).match(/(\d+\.?\d*)%?/);
+                        rateValue = rateMatch ? `${rateMatch[1]}%` : "N/A";
+                      }
+                      
+                      // Format the transaction in the requested format
+                      const lender = trade.lender || "Unknown";
+                      const borrower = trade.borrower || "Unknown";
+                      const amount = trade.amount.replace(/£/g, "GBP ");
+                      const dateRange = trade.startDate && trade.maturityDate 
+                        ? `from ${trade.startDate} to ${trade.maturityDate}`
+                        : "dates unavailable";
+                      
+                      const transaction = `${lender} lends ${amount} to ${borrower} at ${rateValue} ${dateRange}`;
+                      
+                      // Calculate period
+                      let period = "Unknown";
+                      if (trade.startDate && trade.maturityDate) {
+                        // Simple approximation for display
+                        const startParts = trade.startDate.split('.');
+                        const endParts = trade.maturityDate.split('.');
+                        
+                        if (startParts.length === 3 && endParts.length === 3) {
+                          // If in the same year
+                          if (startParts[2] === endParts[2]) {
+                            // Calculate month difference
+                            const monthDiff = parseInt(endParts[1]) - parseInt(startParts[1]);
+                            period = `${monthDiff} months`;
+                          } else {
+                            // Different years
+                            const yearDiff = parseInt(endParts[2]) - parseInt(startParts[2]);
+                            period = `${yearDiff} years`;
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <TableRow key={trade.id}>
+                          <TableCell className="font-medium">{trade.id}</TableCell>
+                          <TableCell>{transaction}</TableCell>
+                          <TableCell className="text-right">{rateValue}</TableCell>
+                          <TableCell className="text-right">{amount}</TableCell>
+                          <TableCell className="text-right">{period}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         {/* Rates Over Time Chart */}
         <TabsContent value="rates">
