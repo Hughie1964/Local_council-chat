@@ -352,7 +352,11 @@ export const SuperUserDashboard: FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TradeAnalytics trades={trades} isLoading={loading} />
+              {/* Pass only trades with status 'executed' */}
+              <TradeAnalytics 
+                trades={trades.filter(trade => trade.status === 'executed')} 
+                isLoading={loading} 
+              />
             </CardContent>
           </Card>
         </TabsContent>

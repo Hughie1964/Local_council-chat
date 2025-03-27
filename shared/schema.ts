@@ -22,6 +22,7 @@ export const councils = pgTable("councils", {
   name: text("name").notNull(),
   councilId: text("council_id").notNull().unique(),
   financialYear: text("financial_year").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Trade execution requests that need super user approval

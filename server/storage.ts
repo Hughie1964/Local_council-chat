@@ -68,10 +68,11 @@ export class MemStorage implements IStorage {
   private async createCouncil(insertCouncil: InsertCouncil): Promise<Council> {
     const id = this.currentCouncilId++;
     const currentDate = new Date();
+    // Now we can use createdAt since we added it to the schema
     const council: Council = { 
       ...insertCouncil, 
-      id, 
-      createdAt: currentDate 
+      id,
+      createdAt: currentDate
     };
     this.councils.set(id, council);
     return council;
