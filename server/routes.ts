@@ -1,11 +1,12 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateChatResponse, generateSessionTitle } from "./openai";
 import { scrapeUKRates } from "./rates-scraper";
+import { analyzeMessageForTrade } from "./trade-analyzer";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { insertMessageSchema } from "@shared/schema";
+import { insertMessageSchema, insertTradeSchema, updateTradeSchema } from "@shared/schema";
 
 // Type for chat request body
 const chatRequestSchema = z.object({
@@ -128,6 +129,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in chat endpoint:", error);
       res.status(500).json({ message: "Failed to process chat request" });
+    }
+  });
+
+  // Trade management routes
+  
+  // Create a trade request
+  app.post("/api/trades", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertTradeSchema.parse(req.body);
+      const trade = await storage.createTrade(validatedData);
+      
+      res.status(201).json(trade);
+    } catch (error) {
+      console.error("Error creating trade request:", error);
+      res.status(500).json({ message: "Failed to create trade request" });
+    }
+  });
+  
+  // Get all trades with optional status filter
+  app.get("/api/trades", async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as "pending" | "approved" | "rejected" | "executed" | undefined;
+      const trades = await storage.getTrades(status);
+      
+      res.json(trades);
+    } catch (error) {
+      console.error("Error fetching trades:", error);
+      res.status(500).json({ message: "Failed to fetch trades" });
+    }
+  });
+  
+  // Get a specific trade
+  app.get("/api/trades/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid trade ID" });
+      }
+      
+      const trade = await storage.getTrade(id);
+      
+      if (!trade) {
+        return res.status(404).json({ message: "Trade not found" });
+      }
+      
+      res.json(trade);
+    } catch (error) {
+      console.error("Error fetching trade:", error);
+      res.status(500).json({ message: "Failed to fetch trade" });
+    }
+  });
+  
+  // Get trades for a specific user
+  app.get("/api/users/:userId/trades", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const trades = await storage.getUserTrades(userId);
+      res.json(trades);
+    } catch (error) {
+      console.error("Error fetching user trades:", error);
+      res.status(500).json({ message: "Failed to fetch user trades" });
+    }
+  });
+  
+  // Update trade status (approve/reject by super user)
+  app.patch("/api/trades/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid trade ID" });
+      }
+      
+      const validatedData = updateTradeSchema.parse(req.body);
+      const updatedTrade = await storage.updateTradeStatus(id, validatedData);
+      
+      if (!updatedTrade) {
+        return res.status(404).json({ message: "Trade not found" });
+      }
+      
+      res.json(updatedTrade);
+    } catch (error) {
+      console.error("Error updating trade:", error);
+      res.status(500).json({ message: "Failed to update trade" });
+    }
+  });
+
+  // User management routes
+  
+  // Get all super users
+  app.get("/api/super-users", async (_req: Request, res: Response) => {
+    try {
+      const superUsers = await storage.getSuperUsers();
+      res.json(superUsers);
+    } catch (error) {
+      console.error("Error fetching super users:", error);
+      res.status(500).json({ message: "Failed to fetch super users" });
+    }
+  });
+  
+  // Update user role
+  app.patch("/api/users/:id/role", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const { role } = req.body;
+      
+      if (!role || !["user", "admin", "super_user"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const updatedUser = await storage.updateUserRole(id, role as "user" | "admin" | "super_user");
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
     }
   });
 
