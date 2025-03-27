@@ -69,19 +69,50 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
   // Colors for the pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+  // Debug function to help see what's happening with the data
+  const debugTrade = (trade: any) => {
+    console.log('Trade:', {
+      id: trade.id,
+      status: trade.status,
+      rate: trade.rate,
+      createdAt: trade.createdAt,
+      createdAtType: typeof trade.createdAt,
+      details: trade.details
+    });
+  };
+
   // Process trade data for charts when trades change
   useEffect(() => {
+    console.log('Total trades:', trades.length);
+    
     if (trades.length === 0) return;
+    
+    // Debug the first trade to see its structure
+    if (trades[0]) {
+      debugTrade(trades[0]);
+    }
 
     // Only use executed trades for analytics
     const executedTrades = trades.filter(trade => trade.status === 'executed');
+    console.log('Executed trades:', executedTrades.length);
     
     // Process data for line chart (rates over time)
     const rateDataPoints: RateData[] = executedTrades.map(trade => {
+      // Handle date conversion properly
+      let timestamp: number;
+      if (typeof trade.createdAt === 'string') {
+        timestamp = new Date(trade.createdAt).getTime();
+      } else if (trade.createdAt instanceof Date) {
+        timestamp = trade.createdAt.getTime();
+      } else {
+        // If it's neither string nor Date, try to parse it anyway
+        timestamp = new Date(String(trade.createdAt)).getTime();
+      }
+      
       // Extract rate from trade.rate field or from details as a fallback
       let rate = 0;
       if (trade.rate) {
-        const rateMatch = trade.rate.match(/(\d+\.?\d*)%?/);
+        const rateMatch = String(trade.rate).match(/(\d+\.?\d*)%?/);
         rate = rateMatch ? parseFloat(rateMatch[1]) : 0;
       } else {
         const rateMatch = trade.details.match(/(\d+\.?\d*)%/);
@@ -96,13 +127,14 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
       
       return {
         id: trade.id,
-        timestamp: new Date(trade.createdAt).getTime(),
+        timestamp,
         rate,
         amount,
         tradeType: trade.tradeType
       };
     }).sort((a, b) => a.timestamp - b.timestamp);
     
+    console.log('Rate data points:', rateDataPoints);
     setRateData(rateDataPoints);
     
     // Process data for pie chart (trade type distribution)
@@ -118,19 +150,30 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
       ([name, value]) => ({ name, value })
     );
     
+    console.log('Type data points:', typeDataPoints);
     setTypeData(typeDataPoints);
     
     // Process data for bar chart (average rates by period)
     const periodRates: Record<string, { sum: number, count: number, amount: number }> = {};
     
     executedTrades.forEach(trade => {
-      const date = new Date(trade.createdAt);
+      // Handle date conversion properly
+      let date: Date;
+      if (typeof trade.createdAt === 'string') {
+        date = new Date(trade.createdAt);
+      } else if (trade.createdAt instanceof Date) {
+        date = trade.createdAt;
+      } else {
+        // If it's neither string nor Date, try to parse it anyway
+        date = new Date(String(trade.createdAt));
+      }
+      
       const period = format(date, 'MMM yyyy');
       
       // Extract rate from trade.rate field or from details as a fallback
       let rate = 0;
       if (trade.rate) {
-        const rateMatch = trade.rate.match(/(\d+\.?\d*)%?/);
+        const rateMatch = String(trade.rate).match(/(\d+\.?\d*)%?/);
         rate = rateMatch ? parseFloat(rateMatch[1]) : 0;
       } else {
         const rateMatch = trade.details.match(/(\d+\.?\d*)%/);
@@ -159,12 +202,24 @@ export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading
         count: data.count
       })
     ).sort((a, b) => {
-      // Sort by date (assumes period format is "MMM yyyy")
-      const dateA = new Date(a.period);
-      const dateB = new Date(b.period);
-      return dateA.getTime() - dateB.getTime();
+      // Use a more robust way to sort by month and year
+      const [monthA, yearA] = a.period.split(' ');
+      const [monthB, yearB] = b.period.split(' ');
+      
+      // Helper function to convert month name to number
+      const getMonthNumber = (monthName: string) => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months.indexOf(monthName);
+      };
+      
+      // Compare by year first, then by month
+      const yearDiff = parseInt(yearA) - parseInt(yearB);
+      if (yearDiff !== 0) return yearDiff;
+      
+      return getMonthNumber(monthA) - getMonthNumber(monthB);
     });
     
+    console.log('Period data points:', periodDataPoints);
     setPeriodData(periodDataPoints);
     
   }, [trades]);

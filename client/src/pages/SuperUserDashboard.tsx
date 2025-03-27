@@ -58,7 +58,18 @@ export const SuperUserDashboard: FC = () => {
           url += `?status=${activeTab}`;
         }
         const response = await axios.get(url);
-        setTrades(response.data);
+        
+        // Process the trades to ensure proper date handling
+        const processedTrades = response.data.map((trade: any) => {
+          // Make sure createdAt is a Date object
+          return {
+            ...trade,
+            createdAt: new Date(trade.createdAt)
+          };
+        });
+        
+        console.log('Processed trades:', processedTrades);
+        setTrades(processedTrades);
       } catch (error) {
         console.error('Error fetching trades:', error);
         toast({

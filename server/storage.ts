@@ -98,7 +98,7 @@ export class MemStorage implements IStorage {
     // First trade from 3 months ago
     const trade1Date = new Date(now);
     trade1Date.setMonth(now.getMonth() - 3);
-    await this.createTrade({
+    const trade1 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -108,15 +108,25 @@ export class MemStorage implements IStorage {
       status: "executed",
       rate: "4.25%"
     });
-    this.trades.get(1).createdAt = trade1Date; // Override timestamps for the demo
-    this.trades.get(1).updatedAt = trade1Date;
-    this.trades.get(1).approvedBy = 1;
-    this.trades.get(1).approvalComment = "Execution approved and completed";
+    
+    // Update the trade properties directly
+    if (trade1) {
+      // Get the trade from the map to update it directly
+      const updatedTrade1 = this.trades.get(trade1.id);
+      if (updatedTrade1) {
+        updatedTrade1.createdAt = trade1Date;
+        updatedTrade1.updatedAt = trade1Date;
+        updatedTrade1.approvedBy = 1;
+        updatedTrade1.approvalComment = "Execution approved and completed";
+        // Save the updated trade back to the map
+        this.trades.set(trade1.id, updatedTrade1);
+      }
+    }
     
     // Second trade from 2 months ago
     const trade2Date = new Date(now);
     trade2Date.setMonth(now.getMonth() - 2);
-    await this.createTrade({
+    const trade2 = await this.createTrade({
       userId: 1,
       sessionId: demoSessionId,
       messageId: demoMessage.id,
@@ -126,10 +136,18 @@ export class MemStorage implements IStorage {
       status: "executed",
       rate: "4.15%"
     });
-    this.trades.get(2).createdAt = trade2Date;
-    this.trades.get(2).updatedAt = trade2Date;
-    this.trades.get(2).approvedBy = 1;
-    this.trades.get(2).approvalComment = "Execution approved and completed";
+    
+    // Update the trade properties directly
+    if (trade2) {
+      const updatedTrade2 = this.trades.get(trade2.id);
+      if (updatedTrade2) {
+        updatedTrade2.createdAt = trade2Date;
+        updatedTrade2.updatedAt = trade2Date;
+        updatedTrade2.approvedBy = 1;
+        updatedTrade2.approvalComment = "Execution approved and completed";
+        this.trades.set(trade2.id, updatedTrade2);
+      }
+    }
     
     // Third trade from 1 month ago
     const trade3Date = new Date(now);
