@@ -27,13 +27,15 @@ interface TradeAnalyticsProps {
 }
 
 export const TradeAnalytics: FC<TradeAnalyticsProps> = ({ trades = [], isLoading = false }) => {
-  // Get executed trades
+  // Get executed trades - explicitly filter by status to ensure we're getting the right ones
   const executedTrades = trades.filter(trade => trade.status === 'executed');
   
-  // Debug
-  console.log('Processed trades:', trades);
-  console.log('Total trades:', trades.length);
-  console.log('Executed trades:', executedTrades.length);
+  // Debug logs to troubleshoot issues
+  console.log('All trades received by TradeAnalytics:', trades);
+  console.log('Executed trades count:', executedTrades.length);
+  if (executedTrades.length > 0) {
+    console.log('First executed trade:', executedTrades[0]);
+  }
 
   if (isLoading) {
     return (

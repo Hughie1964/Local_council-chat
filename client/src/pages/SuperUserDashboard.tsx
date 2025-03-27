@@ -376,10 +376,50 @@ export const SuperUserDashboard: FC = () => {
                   <div className="flex justify-center items-center h-40">
                     <p>Loading trades...</p>
                   </div>
-                ) : trades.length === 0 ? (
+                ) : trades.filter(t => t.status === status).length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No {status} trades found</p>
                   </div>
+                ) : status === 'executed' ? (
+                  <Table>
+                    <TableCaption>List of {status} trades</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">ID</TableHead>
+                        <TableHead>Transaction</TableHead>
+                        <TableHead className="text-right">Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {trades
+                        .filter(trade => trade.status === status)
+                        .map((trade) => {
+                          // Extract rate value
+                          let rateValue = trade.rate || "N/A";
+                          if (rateValue && !rateValue.includes('%')) {
+                            rateValue = `${rateValue}%`;
+                          }
+                          
+                          // Format the transaction in the requested format
+                          const lender = trade.lender || "Unknown";
+                          const borrower = trade.borrower || "Unknown";
+                          const amount = trade.amount.replace(/£/g, "GBP ");
+                          const dateRange = trade.startDate && trade.maturityDate 
+                            ? `from ${trade.startDate} to ${trade.maturityDate}`
+                            : "";
+                          
+                          const transaction = `${lender} lends ${amount} to ${borrower} at ${rateValue} ${dateRange}`;
+                          
+                          return (
+                            <TableRow key={trade.id}>
+                              <TableCell className="font-medium">{trade.id}</TableCell>
+                              <TableCell>{transaction}</TableCell>
+                              <TableCell className="text-right">{rateValue}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <Table>
                     <TableCaption>List of {status} trades</TableCaption>
@@ -394,7 +434,9 @@ export const SuperUserDashboard: FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trades.map((trade) => (
+                      {trades
+                        .filter(trade => trade.status === status)
+                        .map((trade) => (
                         <TableRow key={trade.id}>
                           <TableCell>{trade.id}</TableCell>
                           <TableCell>{trade.tradeType}</TableCell>
