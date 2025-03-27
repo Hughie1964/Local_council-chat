@@ -45,7 +45,7 @@ export const Chat: FC = () => {
           setCurrentSessionId={setCurrentSessionId}
         />
         {ratesPanelVisible && (
-          <div className="w-72 border-l border-neutral-300 p-4 overflow-y-auto bg-white hidden lg:block">
+          <div className="w-72 border-l border-neutral-300 p-4 overflow-y-auto bg-white">
             <RatesPanel />
           </div>
         )}

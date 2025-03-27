@@ -46,7 +46,17 @@ Maintain a helpful, informative tone while recognizing the public service nature
 const DEV_MODE_RESPONSES = {
   chat: `Thank you for your inquiry regarding UK local council money market options.
 
-While I don't have access to current market rates, I can advise that the PWLB (Public Works Loan Board) offers various borrowing options for local councils, with rates that vary based on loan duration and type.
+I'm pleased to provide you with the current rates information available as of 27 March 2025:
+
+**Bank of England Base Rate: 4.5%**
+
+**Current PWLB Fixed Rates:**
+- PWLB 1 Year Fixed Rate: 4.20%
+- PWLB 5 Year Fixed Rate: 4.45%  
+- PWLB 10 Year Fixed Rate: 4.63%
+- PWLB 20 Year Fixed Rate: 4.78%
+- PWLB 30 Year Fixed Rate: 4.85%
+- PWLB 50 Year Fixed Rate: 4.90%
 
 For money market investments, councils typically consider:
 
@@ -55,15 +65,16 @@ For money market investments, councils typically consider:
 3. Money market funds
 4. Short-term bonds
 
-Current best practices in treasury management for UK councils include:
+Current best practices in treasury management for UK councils with the current rates include:
 
+- Considering shorter-term PWLB borrowing given the inverted yield curve
 - Diversification of investment portfolio
 - Regular cash flow forecasting
 - Adherence to CIPFA Treasury Management Code
 - Setting appropriate risk parameters
 - Regular reporting to the Section 151 Officer
 
-Would you like more specific information about any of these areas? I'm happy to provide guidance on how to interpret market rates and trends even though I cannot provide current rates.`,
+Would you like more specific information about how your council should approach these rates or any other financial matters?`,
 
   titles: [
     "PWLB Borrowing Options",
