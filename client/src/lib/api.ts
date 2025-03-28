@@ -4,12 +4,12 @@ import { ChatResponse, Message, Rate } from "@/types";
 export const sendMessage = async (message: string, sessionId?: string): Promise<ChatResponse> => {
   try {
     const response = await apiRequest(
-      "POST",
       "/api/chat",
+      "POST",
       { message, sessionId }
     );
 
-    return await response.json();
+    return response; // apiRequest already handles the json parsing
   } catch (error) {
     console.error("Failed to send message:", error);
     throw error;
@@ -70,12 +70,12 @@ export const getSessionMessages = async (sessionId: string): Promise<Message[]> 
 export const createNewSession = async (): Promise<{ sessionId: string }> => {
   try {
     const response = await apiRequest(
-      "POST",
       "/api/sessions",
+      "POST",
       {}
     );
 
-    return await response.json();
+    return response; // apiRequest already handles the json parsing
   } catch (error) {
     console.error("Failed to create new session:", error);
     throw error;
