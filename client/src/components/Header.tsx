@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Menu, BarChart, Home, Volume2, VolumeX } from "lucide-react";
+import { Menu, BarChart, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
@@ -57,16 +57,6 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
         <div className="flex-grow"></div>
         
         <div className="flex items-center space-x-2">
-          <Button
-            variant="default"
-            onClick={goHome}
-            className="flex items-center gap-2 text-primary-foreground bg-blue-700 hover:bg-blue-800"
-            title="Go to Home"
-          >
-            <Home className="h-5 w-5" />
-            <span>Home</span>
-          </Button>
-          
           {/* Sound toggle button */}
           <Button
             variant="outline"
