@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { sendMessage, getSessionMessages } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Share, MoreVertical } from "lucide-react";
+import { NotificationPopup } from "@/components/NotificationPopup";
+// import { useNotification } from "@/components/ui/notification";
 
 interface ChatContainerProps {
   sessionId?: string;
@@ -20,6 +22,7 @@ export const ChatContainer: FC<ChatContainerProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState({ isError: false, message: "" });
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [newMessage, setNewMessage] = useState<Message | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -108,14 +111,29 @@ export const ChatContainer: FC<ChatContainerProps> = ({
       // Send the message to the server
       const response = await sendMessage(content, sessionId);
       
+      // Create the AI response message
+      const aiResponseMessage = {
+        id: Date.now() + 2,
+        sessionId: sessionId || response.sessionId,
+        content: response.message,
+        isUser: false,
+        timestamp: new Date().toISOString(),
+        loading: false
+      };
+      
       // Update messages with the AI response
       setMessages(prev => prev.map(msg => 
-        msg.loading ? {
-          ...msg,
-          content: response.message,
-          loading: false
-        } : msg
+        msg.loading ? aiResponseMessage : msg
       ));
+      
+      // Show notification for the new message
+      toast({
+        title: "New Message",
+        description: "You've received a new message from Money Market Assistant"
+      });
+      
+      // Set the new message for popup
+      setNewMessage(aiResponseMessage);
       
       // If this is a new session, update the sessionId
       if (!sessionId) {
@@ -136,6 +154,23 @@ export const ChatContainer: FC<ChatContainerProps> = ({
       
       // Remove the loading message
       setMessages(prev => prev.filter(msg => !msg.loading));
+    }
+  };
+
+  // Function to handle closing notification popup
+  const handleCloseNotification = () => {
+    setNewMessage(null);
+  };
+
+  // Function to handle clicking "View Message" in notification
+  const handleViewMessage = () => {
+    setNewMessage(null);
+    // Scroll to the latest message
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   };
 
@@ -175,6 +210,13 @@ export const ChatContainer: FC<ChatContainerProps> = ({
         isError={error.isError}
         errorMessage={error.message}
         resetError={() => setError({ isError: false, message: "" })}
+      />
+
+      {/* Notification Popup */}
+      <NotificationPopup
+        message={newMessage}
+        onClose={handleCloseNotification}
+        onViewMessage={handleViewMessage}
       />
     </main>
   );

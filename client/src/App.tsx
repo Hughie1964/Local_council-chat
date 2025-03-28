@@ -10,6 +10,7 @@ import { SuperUserDashboard } from "@/pages/SuperUserDashboard";
 import UserTradeLog from "@/pages/UserTradeLog";
 import News from "@/pages/News";
 import NotFound from "@/pages/not-found";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 function Router() {
   return (
@@ -29,8 +30,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <NotificationProvider>
+        <Router />
+        <Toaster />
+      </NotificationProvider>
     </QueryClientProvider>
   );
 }

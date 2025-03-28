@@ -8,6 +8,7 @@ import { fetchUKEconomicNews, fetchUKFinancialHeadlines } from './news-service';
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { insertMessageSchema, insertTradeSchema, updateTradeSchema } from "@shared/schema";
+import { WebSocketServer, WebSocket } from 'ws';
 
 // Type for chat request body
 const chatRequestSchema = z.object({
@@ -168,10 +169,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const aiResponse = await generateChatResponse(message);
       
       // Save the AI response
-      await storage.createMessage({
+      const aiMessage = await storage.createMessage({
         sessionId,
         content: aiResponse,
         isUser: false
+      });
+      
+      // Broadcast notification of new message
+      broadcastNotification({
+        type: 'new_message',
+        message: {
+          id: aiMessage.id,
+          sessionId: aiMessage.sessionId,
+          content: aiMessage.content.substring(0, 100) + (aiMessage.content.length > 100 ? '...' : ''),
+          timestamp: aiMessage.timestamp
+        }
       });
       
       res.json({ 
@@ -267,6 +279,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Trade not found" });
       }
       
+      // Broadcast notification of trade status update
+      broadcastNotification({
+        type: 'trade_update',
+        trade: {
+          id: updatedTrade.id,
+          status: updatedTrade.status,
+          amount: updatedTrade.amount,
+          tradeType: updatedTrade.tradeType,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
       res.json(updatedTrade);
     } catch (error) {
       console.error("Error updating trade:", error);
@@ -358,6 +382,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Track active connections
+  const clients: WebSocket[] = [];
+  
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('New WebSocket client connected');
+    clients.push(ws);
+    
+    // Send a welcome message to the client
+    ws.send(JSON.stringify({
+      type: 'connection',
+      message: 'Connected to UK Council Money Market Assistant WebSocket server'
+    }));
+    
+    // Handle client messages
+    ws.on('message', (message: string) => {
+      console.log('Received message:', message);
+      // Process messages here if needed
+    });
+    
+    // Handle client disconnection
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      const index = clients.indexOf(ws);
+      if (index !== -1) {
+        clients.splice(index, 1);
+      }
+    });
+  });
+  
+  // Helper function to broadcast a notification to all connected clients
+  const broadcastNotification = (data: any) => {
+    const message = JSON.stringify({
+      type: 'notification',
+      data
+    });
+    
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  };
+  
+  // Make broadcastNotification available globally
+  (global as any).broadcastNotification = broadcastNotification;
 
   return httpServer;
 }

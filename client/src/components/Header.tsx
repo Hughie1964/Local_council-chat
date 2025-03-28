@@ -1,8 +1,10 @@
 import { FC } from "react";
-import { Menu, BarChart, Home } from "lucide-react";
+import { Menu, BarChart, Home, Bell, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { NotificationIndicator } from "@/components/NotificationPopup";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -13,6 +15,7 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
   const [location, setLocation] = useLocation();
+  const { soundEnabled, toggleSound } = useNotifications();
   
   const isHomePage = location === "/" || location === "";
   
@@ -105,6 +108,21 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
               <Home className="h-5 w-5" />
               <span>Home</span>
             </Button>
+          
+          {/* Notification indicator with sound toggle */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={toggleSound}
+            className={`text-foreground ${soundEnabled ? 'bg-blue-50' : ''}`}
+            title={soundEnabled ? "Sound notifications enabled" : "Sound notifications disabled"}
+          >
+            {soundEnabled ? (
+              <Volume2 className="h-5 w-5 text-blue-600" />
+            ) : (
+              <VolumeX className="h-5 w-5" />
+            )}
+          </Button>
           
           {isTablet && toggleRatesPanel && (
             <Button
