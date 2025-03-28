@@ -1,44 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { X, Bell, Volume2, VolumeX } from 'lucide-react';
+import { X, Bell, Volume2, VolumeX, MessageSquare, BarChart } from 'lucide-react';
 import { Message } from '@/types';
 import { useLocation } from 'wouter';
 
 interface NotificationPopupProps {
-  message: Message | null;
-  onClose: () => void;
-  onViewMessage: () => void;
+  message?: Message | null;
+  onClose?: () => void;
+  onViewMessage?: () => void;
 }
 
 export const NotificationPopup: React.FC<NotificationPopupProps> = ({ 
-  message, 
-  onClose, 
-  onViewMessage 
+  message: propMessage, 
+  onClose: propOnClose, 
+  onViewMessage: propOnViewMessage 
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const { soundEnabled, toggleSound } = useNotifications();
-
+  const { soundEnabled, toggleSound, latestNotification, markAsRead } = useNotifications();
+  const [_, navigate] = useLocation();
+  
+  // Use context's latest notification if props message is not provided
+  const [displayMessage, setDisplayMessage] = useState<any>(null);
+  
+  // Convert notification to Message format if needed
   useEffect(() => {
-    if (message) {
+    if (propMessage) {
+      setDisplayMessage(propMessage);
       setIsVisible(true);
+    } else if (latestNotification) {
+      if (latestNotification.type === 'new_message') {
+        setDisplayMessage(latestNotification.data);
+      } else if (latestNotification.type === 'trade_update') {
+        // For trade updates, create a message-like object
+        setDisplayMessage({
+          id: latestNotification.id,
+          content: latestNotification.content,
+          timestamp: latestNotification.timestamp,
+          type: 'trade_update',
+          data: latestNotification.data
+        });
+      }
+      setIsVisible(true);
+    }
+  }, [propMessage, latestNotification]);
+  
+  // Set a timeout to hide the notification
+  useEffect(() => {
+    if (isVisible) {
       const timer = setTimeout(() => {
         setIsVisible(false);
-        onClose();
+        handleClose();
       }, 5000); // Auto-hide after 5 seconds
       
       return () => clearTimeout(timer);
     }
-  }, [message, onClose]);
+  }, [isVisible]);
+  
+  const handleClose = () => {
+    setIsVisible(false);
+    if (propOnClose) {
+      propOnClose();
+    } else if (latestNotification) {
+      markAsRead(latestNotification.id);
+    }
+    setDisplayMessage(null);
+  };
+  
+  const handleViewMessage = () => {
+    if (propOnViewMessage) {
+      propOnViewMessage();
+    } else if (latestNotification) {
+      markAsRead(latestNotification.id);
+      
+      // Navigate to the appropriate page based on notification type
+      if (latestNotification.type === 'new_message' && latestNotification.data?.sessionId) {
+        navigate(`/?sessionId=${latestNotification.data.sessionId}`);
+      } else if (latestNotification.type === 'trade_update' && latestNotification.data?.id) {
+        navigate(`/my-trades?tradeId=${latestNotification.data.id}`);
+      }
+    }
+    
+    setIsVisible(false);
+    setDisplayMessage(null);
+  };
 
-  if (!message || !isVisible) return null;
+  if (!displayMessage || !isVisible) return null;
+  
+  const isTradeUpdate = displayMessage.type === 'trade_update';
+  const title = isTradeUpdate ? 'Trade Update' : 'New Message';
+  const icon = isTradeUpdate ? <BarChart className="h-5 w-5 mr-2" /> : <MessageSquare className="h-5 w-5 mr-2" />;
+  const gradientColors = isTradeUpdate 
+    ? "from-green-700 to-green-800"
+    : "from-blue-700 to-blue-800";
 
   return (
     <div className="fixed bottom-4 right-4 max-w-sm w-full shadow-lg rounded-lg overflow-hidden z-50 
                   bg-gradient-to-r from-slate-800 to-slate-900 text-white border border-blue-600">
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-700 to-blue-800">
+      <div className={`flex items-center justify-between p-4 bg-gradient-to-r ${gradientColors}`}>
         <div className="flex items-center">
-          <Bell className="h-5 w-5 mr-2" />
-          <span className="font-semibold">New Message</span>
+          {icon}
+          <span className="font-semibold">{title}</span>
         </div>
         <div className="flex space-x-2">
           <button 
@@ -52,10 +113,7 @@ export const NotificationPopup: React.FC<NotificationPopupProps> = ({
             }
           </button>
           <button 
-            onClick={() => {
-              setIsVisible(false);
-              onClose();
-            }}
+            onClick={handleClose}
             className="text-white hover:text-blue-200 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -63,17 +121,14 @@ export const NotificationPopup: React.FC<NotificationPopupProps> = ({
         </div>
       </div>
       <div className="p-4">
-        <p className="text-sm truncate">{message.content}</p>
+        <p className="text-sm truncate">{displayMessage.content}</p>
       </div>
       <div className="bg-slate-800 p-2 flex justify-end">
         <button 
-          onClick={() => {
-            setIsVisible(false);
-            onViewMessage();
-          }}
+          onClick={handleViewMessage}
           className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white transition-colors"
         >
-          View Message
+          {isTradeUpdate ? 'View Trade' : 'View Message'}
         </button>
       </div>
     </div>

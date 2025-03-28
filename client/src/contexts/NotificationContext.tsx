@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { websocketService } from '@/lib/websocket';
 import { Message } from '@/types';
+import { playSound } from '@/lib/audio';
 
-// Sound effect for notifications
-const notificationSound = new Audio('/sounds/notification.mp3');
+// Define the path to notification sound
+const NOTIFICATION_SOUND_PATH = '/sounds/notification.mp3';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -93,20 +94,34 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
   }, []);
   
+  // Create refs for tracking user interaction
+  const hasUserInteractedRef = useRef(false);
+  
+  // Set user interaction flag on document click
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      hasUserInteractedRef.current = true;
+    };
+    
+    // Listen for user interactions
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+    
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, []);
+  
   const addNotification = (notification: Notification) => {
     setNotifications(prev => [notification, ...prev].slice(0, 100)); // Limit to latest 100 notifications
     setLatestNotification(notification);
     
-    // Play sound if enabled
-    if (soundEnabled) {
-      try {
-        notificationSound.currentTime = 0;
-        notificationSound.play().catch(err => {
-          console.warn('Failed to play notification sound:', err);
-        });
-      } catch (error) {
-        console.warn('Error playing notification sound:', error);
-      }
+    // Play sound if enabled and the user has interacted with the document
+    if (soundEnabled && hasUserInteractedRef.current) {
+      playSound(NOTIFICATION_SOUND_PATH).catch(err => {
+        console.warn('Failed to play notification sound:', err);
+      });
     }
   };
   

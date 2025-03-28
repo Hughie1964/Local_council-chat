@@ -71,6 +71,23 @@ class WebSocketService {
       console.warn('WebSocket is not connected, message not sent');
     }
   }
+  
+  // Simulate receiving a message (for testing purposes)
+  public simulateMessage(type: string, data: any): void {
+    console.log(`Simulating ${type} message:`, data);
+    const typeListeners = this.listeners.get(type);
+    if (typeListeners) {
+      typeListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`Error in ${type} simulated message callback:`, error);
+        }
+      });
+    } else {
+      console.warn(`No listeners registered for ${type} messages`);
+    }
+  }
 
   // Check if the WebSocket is connected
   public isConnected(): boolean {
@@ -90,11 +107,14 @@ class WebSocketService {
       
       // Handle different message types
       if (message.type === 'notification' && message.data) {
+        console.log('Notification received:', message.data);
+        
         // Notify listeners for the specific notification type
         const notificationType = message.data.type;
         const typeListeners = this.listeners.get(notificationType);
         
         if (typeListeners) {
+          console.log(`Notifying ${typeListeners.size} listeners for type ${notificationType}`);
           typeListeners.forEach(callback => {
             try {
               callback(message.data);
@@ -102,11 +122,14 @@ class WebSocketService {
               console.error('Error in notification listener callback:', error);
             }
           });
+        } else {
+          console.log(`No listeners found for notification type: ${notificationType}`);
         }
         
         // Also notify general notification listeners
         const allNotificationListeners = this.listeners.get('all_notifications');
         if (allNotificationListeners) {
+          console.log(`Notifying ${allNotificationListeners.size} general listeners`);
           allNotificationListeners.forEach(callback => {
             try {
               callback(message.data);
@@ -114,6 +137,24 @@ class WebSocketService {
               console.error('Error in general notification listener callback:', error);
             }
           });
+        }
+      }
+      // Direct handling of message and trade events without notification wrapper
+      else if (message.type === 'new_message' || message.type === 'trade_update') {
+        console.log(`Direct ${message.type} received:`, message);
+        const typeListeners = this.listeners.get(message.type);
+        
+        if (typeListeners) {
+          console.log(`Notifying ${typeListeners.size} listeners for type ${message.type}`);
+          typeListeners.forEach(callback => {
+            try {
+              callback(message);
+            } catch (error) {
+              console.error(`Error in ${message.type} listener callback:`, error);
+            }
+          });
+        } else {
+          console.log(`No listeners found for type: ${message.type}`);
         }
       }
     } catch (error) {

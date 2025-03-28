@@ -11,6 +11,9 @@ import UserTradeLog from "@/pages/UserTradeLog";
 import News from "@/pages/News";
 import NotFound from "@/pages/not-found";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationPopup } from "@/components/NotificationPopup";
+import { NotificationDisplay } from "@/components/NotificationDisplay";
+import { TestNotifications } from "@/components/TestNotifications";
 
 function Router() {
   return (
@@ -32,6 +35,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <NotificationProvider>
         <Router />
+        <NotificationDisplay />
+        <TestNotifications />
         <Toaster />
       </NotificationProvider>
     </QueryClientProvider>
