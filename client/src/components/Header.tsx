@@ -1,10 +1,9 @@
 import { FC } from "react";
-import { Menu, BarChart, Home, Bell, Volume2, VolumeX } from "lucide-react";
+import { Menu, BarChart, Home, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { NotificationIndicator } from "@/components/NotificationPopup";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -12,12 +11,9 @@ interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
   const [location, setLocation] = useLocation();
   const { soundEnabled, toggleSound } = useNotifications();
-  
-  const isHomePage = location === "/" || location === "";
   
   const goHome = () => {
     setLocation("/");
@@ -57,59 +53,21 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
           </div>
         </div>
         
-        {!isMobile && (
-          <div className="hidden md:flex items-center space-x-1">
-            <a
-              href="/"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              AI Chat
-            </a>
-            <a
-              href="/groups"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              Group Chats
-            </a>
-            <a
-              href="/signup"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              Join Community
-            </a>
-            <a
-              href="/my-trades"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              My Trades
-            </a>
-            <a
-              href="/news"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              UK Financial News
-            </a>
-            <a
-              href="/super-user-dashboard"
-              className="px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
-            >
-              Super User Dashboard
-            </a>
-          </div>
-        )}
+        {/* Empty space where navigation links used to be */}
+        <div className="flex-grow"></div>
         
         <div className="flex items-center space-x-2">
-            <Button
-              variant="default"
-              onClick={goHome}
-              className="flex items-center gap-2 text-primary-foreground bg-blue-700 hover:bg-blue-800"
-              title="Go to Home"
-            >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
-            </Button>
+          <Button
+            variant="default"
+            onClick={goHome}
+            className="flex items-center gap-2 text-primary-foreground bg-blue-700 hover:bg-blue-800"
+            title="Go to Home"
+          >
+            <Home className="h-5 w-5" />
+            <span>Home</span>
+          </Button>
           
-          {/* Notification indicator with sound toggle */}
+          {/* Sound toggle button */}
           <Button
             variant="outline"
             size="icon"
@@ -124,6 +82,7 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
             )}
           </Button>
           
+          {/* Rates panel toggle for tablet view */}
           {isTablet && toggleRatesPanel && (
             <Button
               variant="outline"
@@ -136,13 +95,18 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
             </Button>
           )}
           
+          {/* Sidebar toggle button - always visible for all screen sizes */}
           <Button
             variant="outline"
             size="icon"
-            className="md:hidden"
             onClick={toggleSidebar}
+            className="relative" 
+            title="Toggle Navigation Menu"
           >
             <Menu className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              6
+            </span>
           </Button>
         </div>
       </div>

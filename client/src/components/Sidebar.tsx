@@ -68,7 +68,7 @@ export const Sidebar: FC<SidebarProps> = ({
   if (!visible) return null;
 
   return (
-    <aside className="w-64 bg-white border-r border-neutral-300 h-full overflow-y-auto">
+    <aside className="w-64 bg-white border-r border-neutral-300 h-full overflow-y-auto shadow-lg">
       <ScrollArea className="h-[calc(100vh-8rem)]">
         <div className="p-4">
           <div className="mb-6">
