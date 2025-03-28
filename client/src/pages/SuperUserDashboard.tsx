@@ -1,5 +1,6 @@
 import { FC, useState, useEffect } from 'react';
 import axios from 'axios';
+import { Header } from "@/components/Header";
 import { 
   Card, 
   CardContent, 
@@ -241,9 +242,18 @@ export const SuperUserDashboard: FC = () => {
     }
   };
 
+  // State for sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+  
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold mb-6">Super User Dashboard</h1>
+    <div>
+      <Header toggleSidebar={toggleSidebar} />
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-3xl font-bold mb-6">Super User Dashboard</h1>
       
       <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <TabsList className="mb-6">
@@ -643,7 +653,6 @@ export const SuperUserDashboard: FC = () => {
         ))}
       </Tabs>
     </div>
+    </div>
   );
 };
-
-export default SuperUserDashboard;

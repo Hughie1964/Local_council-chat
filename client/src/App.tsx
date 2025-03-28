@@ -6,7 +6,7 @@ import Chat from "@/pages/Chat";
 import Signup from "@/pages/Signup";
 import Groups from "@/pages/Groups";
 import GroupChatDetail from "@/pages/GroupChatDetail";
-import SuperUserDashboard from "@/pages/SuperUserDashboard";
+import { SuperUserDashboard } from "@/pages/SuperUserDashboard";
 import UserTradeLog from "@/pages/UserTradeLog";
 import News from "@/pages/News";
 import NotFound from "@/pages/not-found";
