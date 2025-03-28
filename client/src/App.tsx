@@ -13,8 +13,6 @@ import NotFound from "@/pages/not-found";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationPopup } from "@/components/NotificationPopup";
 import { NotificationDisplay } from "@/components/NotificationDisplay";
-import { TestNotifications } from "@/components/TestNotifications";
-import { AudioInitializer } from "@/components/AudioInitializer";
 
 function Router() {
   return (
@@ -37,8 +35,6 @@ function App() {
       <NotificationProvider>
         <Router />
         <NotificationDisplay />
-        <AudioInitializer />
-        <TestNotifications />
         <Toaster />
       </NotificationProvider>
     </QueryClientProvider>

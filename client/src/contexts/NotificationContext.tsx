@@ -91,13 +91,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
   }, []);
   
-  // Create refs for tracking user interaction
+  // Create refs for tracking user interaction and audio initialization
   const hasUserInteractedRef = useRef(false);
+  const audioInitializedRef = useRef(false);
   
-  // Set user interaction flag on document click
+  // Set user interaction flag on document click and initialize audio
   useEffect(() => {
     const handleUserInteraction = () => {
       hasUserInteractedRef.current = true;
+      
+      // Initialize audio on first interaction if not already initialized
+      if (!audioInitializedRef.current) {
+        audioInitializedRef.current = true;
+        initializeAudio().catch(err => {
+          console.warn('Failed to initialize audio:', err);
+          audioInitializedRef.current = false;
+        });
+      }
     };
     
     // Listen for user interactions
@@ -114,8 +124,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setNotifications(prev => [notification, ...prev].slice(0, 100)); // Limit to latest 100 notifications
     setLatestNotification(notification);
     
-    // Play sound if enabled and the user has interacted with the document
-    if (soundEnabled && hasUserInteractedRef.current) {
+    // Play sound if enabled, audio is initialized, and the user has interacted with the document
+    if (soundEnabled && hasUserInteractedRef.current && audioInitializedRef.current) {
       playNotificationSound().catch(err => {
         console.warn('Failed to play notification sound:', err);
       });
