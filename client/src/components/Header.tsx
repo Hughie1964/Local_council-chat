@@ -97,9 +97,9 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
         
         <div className="flex items-center space-x-2">
             <Button
-              variant="primary"
+              variant="default"
               onClick={goHome}
-              className="flex items-center gap-2 text-primary-foreground"
+              className="flex items-center gap-2 text-primary-foreground bg-blue-700 hover:bg-blue-800"
               title="Go to Home"
             >
               <Home className="h-5 w-5" />
