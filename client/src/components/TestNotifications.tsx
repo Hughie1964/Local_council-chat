@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { websocketService } from '@/lib/websocket';
-import { playSound } from '@/lib/audio';
+import { playNotificationSound } from '@/lib/audio';
 import { useNotifications } from '@/contexts/NotificationContext';
 
 export const TestNotifications: FC = () => {
@@ -42,7 +42,7 @@ export const TestNotifications: FC = () => {
   const testSound = () => {
     console.log('Testing notification sound');
     if (soundEnabled) {
-      playSound('/sounds/notification.mp3')
+      playNotificationSound()
         .then(() => console.log('Sound played successfully'))
         .catch(err => console.error('Error playing sound:', err));
     } else {

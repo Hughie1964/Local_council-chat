@@ -1,10 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { websocketService } from '@/lib/websocket';
 import { Message } from '@/types';
-import { playSound } from '@/lib/audio';
-
-// Define the path to notification sound
-const NOTIFICATION_SOUND_PATH = '/sounds/notification.mp3';
+import { playNotificationSound } from '@/lib/audio';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -119,7 +116,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     
     // Play sound if enabled and the user has interacted with the document
     if (soundEnabled && hasUserInteractedRef.current) {
-      playSound(NOTIFICATION_SOUND_PATH).catch(err => {
+      playNotificationSound().catch(err => {
         console.warn('Failed to play notification sound:', err);
       });
     }
