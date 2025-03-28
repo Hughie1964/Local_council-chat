@@ -22,38 +22,41 @@ export const ChatMessage: FC<ChatMessageProps> = ({ message }) => {
     </div>
   );
 
-  const contentWithHtml = message.content.replace(/\n/g, "<br>").replace(
-    /<table(.*?)>(.*?)<\/table>/gs,
+  const contentWithHtml = message.content.replace(/\n/g, "<br>");
+  
+  // Handle tables with a simple solution that doesn't use the 's' flag
+  const tableFormattedContent = contentWithHtml.replace(
+    /<table([^>]*)>([\s\S]*?)<\/table>/g,
     (match) => `<div class="bg-white rounded-md border border-neutral-300 p-2 my-2 overflow-auto">${match}</div>`
   );
 
   return message.isUser ? (
-    <div className="flex items-start justify-end">
-      <div className="chat-bubble-user max-w-[80%] bg-primary text-white rounded-[18px_18px_0_18px] p-3">
-        <div className="text-sm" dangerouslySetInnerHTML={{ __html: contentWithHtml }}></div>
-        <p className="text-xs text-neutral-300 mt-1">{formattedTime}</p>
+    <div className="flex items-start justify-end mb-6">
+      <div className="user-message shadow-md">
+        <div className="text-sm" dangerouslySetInnerHTML={{ __html: tableFormattedContent }}></div>
+        <p className="text-xs text-primary-foreground/80 mt-2 text-right">{formattedTime}</p>
         {message.loading && loadingIndicator}
       </div>
       <div className="ml-2 flex-shrink-0">
-        <Avatar className="h-8 w-8 bg-neutral-300">
-          <AvatarFallback className="bg-neutral-300 text-secondary">
+        <Avatar className="h-8 w-8 border-2 border-primary">
+          <AvatarFallback className="bg-primary-foreground text-primary">
             <User className="h-5 w-5" />
           </AvatarFallback>
         </Avatar>
       </div>
     </div>
   ) : (
-    <div className="flex items-start">
+    <div className="flex items-start mb-6">
       <div className="mr-2 flex-shrink-0">
-        <Avatar className="h-8 w-8 bg-primary text-white">
-          <AvatarFallback className="bg-primary text-white">
+        <Avatar className="h-8 w-8 border-2 border-muted">
+          <AvatarFallback className="bg-primary text-primary-foreground">
             <Brain className="h-5 w-5" />
           </AvatarFallback>
         </Avatar>
       </div>
-      <div className="chat-bubble-ai max-w-[80%] bg-[#f0f2f5] text-gray-900 rounded-[18px_18px_18px_0] p-3">
-        <div className="text-sm" dangerouslySetInnerHTML={{ __html: contentWithHtml }}></div>
-        <p className="text-xs text-secondary-light mt-1">{formattedTime}</p>
+      <div className="ai-message shadow-md">
+        <div className="text-sm" dangerouslySetInnerHTML={{ __html: tableFormattedContent }}></div>
+        <p className="text-xs text-muted-foreground/80 mt-2">{formattedTime}</p>
         {message.loading && loadingIndicator}
       </div>
     </div>
