@@ -432,5 +432,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Make broadcastNotification available globally
   (global as any).broadcastNotification = broadcastNotification;
 
+  // Test endpoint for notifications
+  app.get("/api/test-notification", (_req: Request, res: Response) => {
+    try {
+      // Create a test notification for a new message
+      const messageNotification = {
+        type: 'new_message',
+        message: {
+          id: 999,
+          sessionId: 'test-session',
+          content: 'This is a test notification message from the server.',
+          isUser: false,
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      // Send the notification
+      console.log('Sending test notification...');
+      broadcastNotification(messageNotification);
+      console.log('Test notification sent!');
+      
+      // Schedule a trade notification after 3 seconds
+      setTimeout(() => {
+        const tradeNotification = {
+          type: 'trade_update',
+          trade: {
+            id: 101,
+            status: 'approved',
+            tradeType: 'Loan',
+            amount: '1,000,000',
+            timestamp: new Date().toISOString()
+          }
+        };
+        
+        console.log('Sending test trade notification...');
+        broadcastNotification(tradeNotification);
+        console.log('Test trade notification sent!');
+      }, 3000);
+      
+      res.json({ success: true, message: "Test notifications sent" });
+    } catch (error) {
+      console.error("Error sending test notification:", error);
+      res.status(500).json({ success: false, message: "Failed to send test notification" });
+    }
+  });
+
   return httpServer;
 }
