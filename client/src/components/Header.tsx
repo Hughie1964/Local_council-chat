@@ -96,17 +96,15 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
         )}
         
         <div className="flex items-center space-x-2">
-          {!isHomePage && (
             <Button
-              variant="outline"
-              size="icon"
+              variant="primary"
               onClick={goHome}
-              className="text-foreground"
+              className="flex items-center gap-2 text-primary-foreground"
               title="Go to Home"
             >
               <Home className="h-5 w-5" />
+              <span>Home</span>
             </Button>
-          )}
           
           {isTablet && toggleRatesPanel && (
             <Button
