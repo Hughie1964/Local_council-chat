@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { generateChatResponse, generateSessionTitle } from "./openai";
 import { scrapeUKRates } from "./rates-scraper";
 import { analyzeMessageForTrade } from "./trade-analyzer";
+import { fetchUKEconomicNews, fetchUKFinancialHeadlines } from './news-service';
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { insertMessageSchema, insertTradeSchema, updateTradeSchema } from "@shared/schema";
@@ -311,6 +312,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // News API routes
+  
+  // Get UK economic news
+  app.get("/api/news/economic", async (req: Request, res: Response) => {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string) : 10;
+      
+      if (isNaN(page) || isNaN(pageSize) || page < 1 || pageSize < 1 || pageSize > 50) {
+        return res.status(400).json({ 
+          message: "Invalid pagination parameters. Page must be ≥1, pageSize must be between 1-50." 
+        });
+      }
+      
+      const news = await fetchUKEconomicNews(page, pageSize);
+      res.json({ news, page, pageSize });
+    } catch (error) {
+      console.error("Error fetching UK economic news:", error);
+      res.status(500).json({ message: "Failed to fetch UK economic news" });
+    }
+  });
+  
+  // Get UK financial headlines
+  app.get("/api/news/headlines", async (req: Request, res: Response) => {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string) : 10;
+      
+      if (isNaN(page) || isNaN(pageSize) || page < 1 || pageSize < 1 || pageSize > 50) {
+        return res.status(400).json({ 
+          message: "Invalid pagination parameters. Page must be ≥1, pageSize must be between 1-50." 
+        });
+      }
+      
+      const headlines = await fetchUKFinancialHeadlines(page, pageSize);
+      res.json({ headlines, page, pageSize });
+    } catch (error) {
+      console.error("Error fetching UK financial headlines:", error);
+      res.status(500).json({ message: "Failed to fetch UK financial headlines" });
     }
   });
 

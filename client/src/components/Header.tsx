@@ -67,6 +67,12 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
               My Trades
             </a>
             <a
+              href="/news"
+              className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
+            >
+              UK Financial News
+            </a>
+            <a
               href="/super-user-dashboard"
               className="text-sm font-medium text-secondary hover:text-primary transition-colors duration-200"
             >
