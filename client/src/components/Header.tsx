@@ -1,7 +1,8 @@
 import { FC } from "react";
-import { Menu, BarChart } from "lucide-react";
+import { Menu, BarChart, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -11,11 +12,22 @@ interface HeaderProps {
 export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
+  const [location, setLocation] = useLocation();
+  
+  const isHomePage = location === "/" || location === "";
+  
+  const goHome = () => {
+    setLocation("/");
+  };
 
   return (
     <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-50 border-b py-3 px-4 shadow-sm">
       <div className="container mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div 
+          className="flex items-center space-x-3 cursor-pointer" 
+          onClick={goHome}
+          title="Go to Home Page"
+        >
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -84,6 +96,18 @@ export const Header: FC<HeaderProps> = ({ toggleSidebar, toggleRatesPanel }) => 
         )}
         
         <div className="flex items-center space-x-2">
+          {!isHomePage && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goHome}
+              className="text-foreground"
+              title="Go to Home"
+            >
+              <Home className="h-5 w-5" />
+            </Button>
+          )}
+          
           {isTablet && toggleRatesPanel && (
             <Button
               variant="outline"
