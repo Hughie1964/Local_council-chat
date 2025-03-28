@@ -129,9 +129,9 @@ export const ChatInput: FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="border-t border-neutral-300 bg-white p-4">
+    <div className="border-t bg-background/80 backdrop-blur-sm p-4">
       {isError && (
-        <Alert variant="destructive" className="bg-red-500/10 text-red-600 text-sm p-2 rounded-md mb-2">
+        <Alert variant="destructive" className="bg-destructive/10 text-destructive text-sm p-2 rounded-md mb-2">
           <AlertCircle className="h-5 w-5 mr-1" />
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
@@ -150,7 +150,7 @@ export const ChatInput: FC<ChatInputProps> = ({
             ref={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className={`w-full border ${isListening ? 'border-primary' : 'border-neutral-300'} rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200`}
+            className={`w-full gradient-border ${isListening ? 'border-primary' : 'border-primary/30'} rounded-lg py-3 pl-4 pr-10 focus-visible:ring-1 focus-visible:ring-primary transition-colors duration-200`}
             placeholder={isListening ? "Listening to your voice..." : "Type your money market query here..."}
           />
           {speechSupported && (
@@ -159,7 +159,7 @@ export const ChatInput: FC<ChatInputProps> = ({
               variant="ghost" 
               size="icon"
               onClick={toggleListening}
-              className={`absolute right-3 top-2.5 ${isListening ? 'text-red-500 animate-pulse' : 'text-neutral-400 hover:text-primary'}`}
+              className={`absolute right-3 top-2.5 ${isListening ? 'text-red-500 animate-pulse' : 'text-muted-foreground hover:text-primary'}`}
             >
               {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </Button>
@@ -168,13 +168,13 @@ export const ChatInput: FC<ChatInputProps> = ({
         <Button 
           type="submit" 
           size="icon"
-          className="bg-primary hover:bg-primary/90 text-white rounded-lg p-3 transition-colors"
+          className="bg-gradient-to-tr from-primary to-primary/80 hover:bg-primary/90 text-primary-foreground rounded-lg p-3 transition-all hover:shadow-md"
         >
           <SendHorizontal className="h-5 w-5" />
         </Button>
       </form>
 
-      <div className="mt-2 text-xs text-center text-secondary/70">
+      <div className="mt-2 text-xs text-center text-muted-foreground">
         {speechSupported ? (
           <>
             This advisory service provides general information and analysis for council officers. 
