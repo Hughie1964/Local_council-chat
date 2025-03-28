@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { websocketService } from '@/lib/websocket';
 import { Message } from '@/types';
-import { playNotificationSound } from '@/lib/audio';
+import { playNotificationSound, initializeAudio } from '@/lib/audio';
 
 interface NotificationContextType {
   notifications: Notification[];

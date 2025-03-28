@@ -1,11 +1,30 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { websocketService } from '@/lib/websocket';
-import { playNotificationSound } from '@/lib/audio';
+import { playNotificationSound, initializeAudio } from '@/lib/audio';
 import { useNotifications } from '@/contexts/NotificationContext';
 
 export const TestNotifications: FC = () => {
   const { soundEnabled } = useNotifications();
+  const [audioInitialized, setAudioInitialized] = useState(false);
+  const [initializationInProgress, setInitializationInProgress] = useState(false);
+  
+  const initializeAudioSystem = () => {
+    console.log('Initializing audio system...');
+    setInitializationInProgress(true);
+    
+    // Call initializeAudio which must be triggered by a user interaction
+    initializeAudio()
+      .then(() => {
+        console.log('Audio system initialized successfully');
+        setAudioInitialized(true);
+        setInitializationInProgress(false);
+      })
+      .catch(error => {
+        console.error('Failed to initialize audio system:', error);
+        setInitializationInProgress(false);
+      });
+  };
   
   const sendTestMessage = () => {
     const testMessage = {
@@ -21,6 +40,11 @@ export const TestNotifications: FC = () => {
     
     console.log('Simulating new message notification');
     websocketService.simulateMessage('new_message', testMessage);
+    
+    // Try to initialize audio if not already initialized
+    if (!audioInitialized && !initializationInProgress) {
+      initializeAudioSystem();
+    }
   };
   
   const sendTestTradeUpdate = () => {
@@ -37,14 +61,26 @@ export const TestNotifications: FC = () => {
     
     console.log('Simulating trade update notification');
     websocketService.simulateMessage('trade_update', testTrade);
+    
+    // Try to initialize audio if not already initialized
+    if (!audioInitialized && !initializationInProgress) {
+      initializeAudioSystem();
+    }
   };
   
   const testSound = () => {
     console.log('Testing notification sound');
+    
+    // If audio is not initialized, initialize it first
+    if (!audioInitialized) {
+      initializeAudioSystem();
+      return;
+    }
+    
     if (soundEnabled) {
       playNotificationSound()
         .then(() => console.log('Sound played successfully'))
-        .catch(err => console.error('Error playing sound:', err));
+        .catch(error => console.error('Error playing sound:', error));
     } else {
       console.log('Sound is disabled, enable it first');
     }
@@ -69,12 +105,19 @@ export const TestNotifications: FC = () => {
         Test Trade Notification
       </Button>
       <Button
-        variant="default"
+        variant={audioInitialized ? "default" : "outline"}
         size="sm"
         onClick={testSound}
-        className="bg-purple-600 hover:bg-purple-700"
+        className={audioInitialized 
+          ? "bg-purple-600 hover:bg-purple-700" 
+          : "border-purple-600 text-purple-600 hover:bg-purple-100"}
+        disabled={initializationInProgress}
       >
-        Test Sound
+        {initializationInProgress 
+          ? "Initializing..." 
+          : audioInitialized 
+            ? "Test Sound" 
+            : "Initialize Sound"}
       </Button>
     </div>
   );
