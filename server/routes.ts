@@ -23,18 +23,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // prefix all routes with /api
   
-  // Get council information (mock data for now)
-  app.get("/api/council", async (_req: Request, res: Response) => {
+  // Get council information based on authenticated user
+  app.get("/api/council", async (req: Request, res: Response) => {
     try {
-      // In a real app, this would come from a database based on authenticated user
-      const council = {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        // Return default council for unauthenticated users (for demo purposes)
+        const defaultCouncil = {
+          id: 1,
+          name: "Birmingham City Council",
+          councilId: "BCC-4578", 
+          financialYear: "2023/24"
+        };
+        return res.json(defaultCouncil);
+      }
+      
+      // Get the authenticated user
+      const user = req.user;
+      
+      // If user has a councilId, use it to look up their council
+      if (user.councilId) {
+        // Try to find the user's council in the database by councilId
+        const userCouncil = await storage.getCouncilByCouncilId(user.councilId);
+        
+        if (userCouncil) {
+          return res.json(userCouncil);
+        }
+        
+        // If the council can't be found but user has councilId,
+        // create a basic council with the ID
+        const customCouncil = {
+          id: 0, // Temporary ID
+          name: `${user.username}'s Council`,
+          councilId: user.councilId,
+          financialYear: "2023/24"
+        };
+        
+        return res.json(customCouncil);
+      }
+      
+      // If the user doesn't have a councilId, return the default council
+      const defaultCouncil = {
         id: 1,
         name: "Birmingham City Council",
         councilId: "BCC-4578",
         financialYear: "2023/24"
       };
       
-      res.json(council);
+      res.json(defaultCouncil);
     } catch (error) {
       console.error("Error fetching council information:", error);
       res.status(500).json({ message: "Failed to fetch council information" });

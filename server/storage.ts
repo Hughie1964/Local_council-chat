@@ -28,6 +28,9 @@ export interface IStorage {
   updateUserRole(userId: number, role: "user" | "admin" | "super_user"): Promise<User | undefined>;
   getSuperUsers(): Promise<User[]>;
   
+  // Council methods
+  getCouncilByCouncilId(councilId: string): Promise<Council | undefined>;
+  
   // Session methods
   getSessions(): Promise<Session[]>;
   getSession(sessionId: string): Promise<Session | undefined>;
@@ -79,6 +82,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(eq(users.role, "super_user"));
+  }
+  
+  // Council methods
+  async getCouncilByCouncilId(councilId: string): Promise<Council | undefined> {
+    const [council] = await db
+      .select()
+      .from(councils)
+      .where(eq(councils.councilId, councilId));
+    return council;
   }
   
   // Session methods
