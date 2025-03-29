@@ -160,6 +160,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send a message to the AI and get a response
+  // Helper function to check if a message is asking about maturing trades
+  function isCheckingMaturities(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+    const maturityPhrases = [
+      'check upcoming maturities',
+      'upcoming maturities',
+      'maturity reminder',
+      'trades maturing soon',
+      'when do my trades mature',
+      'show maturing trades',
+      'trades about to mature',
+      'upcoming trade maturity',
+      'maturity check',
+      'show maturity dates',
+      'trades due soon',
+      'check maturities'
+    ];
+    
+    return maturityPhrases.some(phrase => lowerMessage.includes(phrase));
+  }
+
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
       const validatedData = chatRequestSchema.parse(req.body);
@@ -185,6 +206,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
         isUser: true
       });
+      
+      // Check if this is a maturity check request
+      if (isCheckingMaturities(message)) {
+        console.log("Detected request to check upcoming maturities");
+        
+        // Run the maturity check
+        await checkUpcomingMaturities(wss);
+        
+        // Provide a response to the user
+        const maturityResponse = await storage.createMessage({
+          sessionId,
+          content: `I've checked for upcoming trade maturities. If you have any trades maturing in the next 3 days, you'll receive a notification with the details.`,
+          isUser: false
+        });
+        
+        return res.json(maturityResponse);
+      }
       
       // Check if the message contains a trade, negotiation, or confirmation
       const tradeDetails = await analyzeMessageForTrade(message);
