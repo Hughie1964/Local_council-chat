@@ -1,107 +1,107 @@
 // Audio utilities for the application
 
-// This is a workaround for browser autoplay restrictions
-// We create a single audio context on user interaction
-let audioContext: AudioContext | null = null;
-let audioBuffer: AudioBuffer | null = null;
+// Pre-load the audio element to avoid loading delays
+const notificationAudio = new Audio('/sounds/notification.mp3');
 let isAudioInitialized = false;
-let initializationPromise: Promise<void> | null = null;
 
 /**
  * Initialize the audio system on first user interaction
  * This must be called from a user interaction event handler
  */
 export function initializeAudio(): Promise<void> {
-  // If audio is already initialized or being initialized, return the existing promise
+  // If audio is already initialized, return a resolved promise
   if (isAudioInitialized) {
     return Promise.resolve();
   }
   
-  if (initializationPromise) {
-    return initializationPromise;
-  }
-  
-  // Create a new initialization promise
-  initializationPromise = new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     try {
-      // Create AudioContext on user interaction
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Load the audio file
+      notificationAudio.load();
       
-      // Fetch the audio file
-      fetch('/sounds/notification.mp3')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch sound file: ${response.status} ${response.statusText}`);
-          }
-          return response.arrayBuffer();
-        })
-        .then(arrayBuffer => {
-          if (!audioContext) {
-            throw new Error('AudioContext not initialized');
-          }
-          
-          // Decode the audio file
-          return audioContext.decodeAudioData(arrayBuffer);
-        })
-        .then(buffer => {
-          audioBuffer = buffer;
-          isAudioInitialized = true;
-          console.log('Audio system initialized successfully');
-          resolve();
-        })
-        .catch(error => {
-          console.error('Failed to initialize audio:', error);
-          reject(error);
-        });
+      // Set volume to 50%
+      notificationAudio.volume = 0.5;
+      
+      // Try playing and immediately pausing to "unlock" audio on some browsers
+      const playPromise = notificationAudio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Immediately pause the audio
+            notificationAudio.pause();
+            notificationAudio.currentTime = 0;
+            
+            isAudioInitialized = true;
+            console.log('Audio system initialized successfully');
+            resolve();
+          })
+          .catch(error => {
+            // Auto-play was prevented
+            console.warn('Audio initialization failed (auto-play prevented):', error);
+            
+            // Still consider it initialized - we'll try again on user interaction
+            isAudioInitialized = true;
+            resolve();
+          });
+      } else {
+        // Browser doesn't return a promise from play()
+        notificationAudio.pause();
+        notificationAudio.currentTime = 0;
+        
+        isAudioInitialized = true;
+        console.log('Audio system initialized successfully');
+        resolve();
+      }
     } catch (error) {
       console.error('Exception initializing audio:', error);
       reject(error);
     }
   });
-  
-  return initializationPromise;
 }
 
 /**
- * Play the notification sound
- * This uses Web Audio API which has better browser support for playing
- * sounds without user interaction once initialized
+ * Play the notification sound using HTML5 Audio
+ * This is a simpler approach than Web Audio API
  */
 export function playNotificationSound(): Promise<void> {
-  // If audio is not initialized, just return resolved promise
-  // We don't want to try to initialize audio here as it requires user interaction
-  if (!isAudioInitialized || !audioContext || !audioBuffer) {
-    console.warn('Cannot play notification sound: Audio not initialized');
-    return Promise.resolve();
-  }
-  
-  try {
-    // Create a sound source
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    
-    // Create a gain node to control volume
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = 0.5; // Set volume to 50%
-    
-    // Connect the source to the gain node and the gain node to the destination
-    source.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // Play the sound
-    source.start(0);
-    console.log('Playing notification sound');
-    
-    // Return a promise that resolves when the sound is done playing
-    return new Promise((resolve) => {
-      source.onended = () => {
-        resolve();
-      };
-    });
-  } catch (error) {
-    console.error('Failed to play notification sound:', error);
-    return Promise.resolve();
-  }
+  return new Promise<void>((resolve, reject) => {
+    try {
+      // Clone the audio element to allow overlapping sounds
+      const audioClone = new Audio(notificationAudio.src);
+      audioClone.volume = notificationAudio.volume;
+      
+      // Play the sound
+      const playPromise = audioClone.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Playing notification sound');
+            
+            // Listen for the ended event to resolve the promise
+            audioClone.onended = () => {
+              resolve();
+            };
+          })
+          .catch(error => {
+            console.warn('Failed to play notification sound:', error);
+            resolve(); // Resolve anyway to prevent hanging promises
+          });
+      } else {
+        // Browser doesn't return a promise from play()
+        console.log('Playing notification sound');
+        
+        // Listen for the ended event to resolve the promise
+        audioClone.onended = () => {
+          resolve();
+        };
+      }
+    } catch (error) {
+      console.error('Failed to play notification sound:', error);
+      resolve(); // Resolve anyway to prevent hanging promises
+    }
+  });
 }
 
 /**
@@ -113,6 +113,12 @@ export async function playSound(soundPath: string): Promise<void> {
     return playNotificationSound();
   }
   
-  console.warn('playSound is deprecated, use playNotificationSound instead');
-  return playNotificationSound();
+  // For other sounds, create a new Audio element
+  const audio = new Audio(soundPath);
+  audio.volume = 0.5;
+  
+  return new Promise<void>((resolve) => {
+    audio.play().catch(console.error);
+    audio.onended = () => resolve();
+  });
 }

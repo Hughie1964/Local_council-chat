@@ -91,32 +91,56 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
   }, []);
   
-  // Create refs for tracking user interaction and audio initialization
+  // Create refs for tracking user interaction
   const hasUserInteractedRef = useRef(false);
   const audioInitializedRef = useRef(false);
   
-  // Set user interaction flag on document click and initialize audio
+  // Initialize audio on mount and ensure we catch all user interactions
   useEffect(() => {
     const handleUserInteraction = () => {
-      hasUserInteractedRef.current = true;
+      if (!hasUserInteractedRef.current) {
+        hasUserInteractedRef.current = true;
+        console.log("First user interaction detected, initializing audio system");
+      }
       
-      // Initialize audio on first interaction if not already initialized
+      // Try to initialize audio on every user interaction until it succeeds
       if (!audioInitializedRef.current) {
-        audioInitializedRef.current = true;
-        initializeAudio().catch(err => {
-          console.warn('Failed to initialize audio:', err);
-          audioInitializedRef.current = false;
-        });
+        initializeAudio()
+          .then(() => {
+            console.log("Audio successfully initialized after user interaction");
+            audioInitializedRef.current = true;
+            
+            // Try to play a test sound (silent or very low volume)
+            const testAudio = new Audio('/sounds/notification.mp3');
+            testAudio.volume = 0.01; // Almost silent
+            testAudio.play().catch(err => {
+              console.log("Test audio playback failed, but initialization succeeded");
+            });
+          })
+          .catch(err => {
+            console.warn('Failed to initialize audio on user interaction:', err);
+          });
       }
     };
     
-    // Listen for user interactions
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
+    // Listen for a wide array of user interactions
+    const events = ['click', 'keydown', 'touchstart', 'mousedown'];
+    events.forEach(event => document.addEventListener(event, handleUserInteraction, { once: false }));
+    
+    // Try to initialize audio right away - this might fail but we'll retry on user interaction
+    if (!audioInitializedRef.current) {
+      initializeAudio()
+        .then(() => {
+          console.log("Audio successfully initialized on mount");
+          audioInitializedRef.current = true;
+        })
+        .catch(err => {
+          console.log("Initial audio initialization failed, will retry on user interaction");
+        });
+    }
     
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
+      events.forEach(event => document.removeEventListener(event, handleUserInteraction));
     };
   }, []);
   
