@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRecentConversations, getCouncilInfo, createNewSession } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Info, Plus, Shield, Users, UserPlus, BarChart, Newspaper } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { FileText, Info, Plus, Shield, Users, UserPlus, BarChart, Newspaper, LogOut } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ export const Sidebar: FC<SidebarProps> = ({
   const [council, setCouncil] = useState<Council | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user, logoutMutation } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -182,7 +184,7 @@ export const Sidebar: FC<SidebarProps> = ({
           </div>
         </div>
       </ScrollArea>
-      <div className="border-t border-neutral-300 p-4">
+      <div className="border-t border-neutral-300 p-4 space-y-2">
         <Button
           variant="outline"
           className="w-full bg-neutral-200 hover:bg-neutral-300 text-secondary font-medium py-2 px-4 transition-colors duration-200 flex items-center justify-center"
@@ -192,6 +194,18 @@ export const Sidebar: FC<SidebarProps> = ({
           <Plus className="h-5 w-5 mr-2" />
           New Conversation
         </Button>
+        
+        {user && (
+          <Button
+            variant="outline"
+            className="w-full border border-red-200 hover:bg-red-50 text-red-600 font-medium py-2 px-4 transition-colors duration-200 flex items-center justify-center"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="h-5 w-5 mr-2" />
+            {logoutMutation.isPending ? "Logging out..." : "Log out"}
+          </Button>
+        )}
       </div>
     </aside>
   );

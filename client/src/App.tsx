@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Chat from "@/pages/Chat";
-import Signup from "@/pages/Signup";
+import AuthPage from "@/pages/auth-page";
 import Groups from "@/pages/Groups";
 import GroupChatDetail from "@/pages/GroupChatDetail";
 import { SuperUserDashboard } from "@/pages/SuperUserDashboard";
@@ -11,19 +11,20 @@ import UserTradeLog from "@/pages/UserTradeLog";
 import News from "@/pages/News";
 import NotFound from "@/pages/not-found";
 import { NotificationProvider } from "@/contexts/NotificationContext";
-import { NotificationPopup } from "@/components/NotificationPopup";
 import { NotificationDisplay } from "@/components/NotificationDisplay";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Chat} />
-      <Route path="/signup" component={Signup} />
-      <Route path="/groups" component={Groups} />
-      <Route path="/groups/:groupId" component={GroupChatDetail} />
-      <Route path="/super-user-dashboard" component={SuperUserDashboard} />
-      <Route path="/my-trades" component={UserTradeLog} />
-      <Route path="/news" component={News} />
+      <ProtectedRoute path="/" component={Chat} />
+      <ProtectedRoute path="/groups" component={Groups} />
+      <ProtectedRoute path="/groups/:groupId" component={GroupChatDetail} />
+      <ProtectedRoute path="/super-user-dashboard" component={SuperUserDashboard} />
+      <ProtectedRoute path="/my-trades" component={UserTradeLog} />
+      <ProtectedRoute path="/news" component={News} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -32,11 +33,13 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <Router />
-        <NotificationDisplay />
-        <Toaster />
-      </NotificationProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <Router />
+          <NotificationDisplay />
+          <Toaster />
+        </NotificationProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

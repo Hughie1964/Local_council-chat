@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { insertMessageSchema, insertTradeSchema, updateTradeSchema } from "@shared/schema";
 import { WebSocketServer, WebSocket } from 'ws';
+import { setupAuth } from "./auth";
 
 // Type for chat request body
 const chatRequestSchema = z.object({
@@ -17,6 +18,9 @@ const chatRequestSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication routes and middleware
+  setupAuth(app);
+  
   // prefix all routes with /api
   
   // Get council information (mock data for now)
