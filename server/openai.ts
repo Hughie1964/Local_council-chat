@@ -287,191 +287,322 @@ export async function analyzeInterestRatesForCouncils(rateInfo: string): Promise
 }
 
 /**
+ * Intent detection for various features
+ * This more advanced approach identifies the user's intent regardless of exact phrasing
+ */
+interface CommandIntent {
+  feature: string;
+  action: string;
+  confidence: number;
+  extractedParams?: Record<string, any>;
+}
+
+/**
+ * Identify user's intent from their message
+ */
+function identifyCommandIntent(message: string): CommandIntent | null {
+  const lowerCaseMsg = message.toLowerCase();
+  
+  // Feature keyword groups
+  const featureKeywords = {
+    calendar: [
+      'calendar', 'schedule', 'event', 'meeting', 'appointment', 'agenda', 
+      'upcoming', 'planned', 'financial calendar', 'events', 'when is', 
+      'dates', 'timetable', 'maturity', 'maturation', 'maturing', 'due',
+      'reminder', 'booking', 'invite'
+    ],
+    documents: [
+      'document', 'file', 'report', 'attachment', 'paper', 'pdf', 
+      'spreadsheet', 'financial report', 'statement', 'policy', 
+      'guidance', 'records', 'presentation', 'memo', 'minutes',
+      'agreements', 'contract', 'forms'
+    ],
+    forecasting: [
+      'forecast', 'predict', 'projection', 'outlook', 'future', 'trend', 
+      'analysis', 'cash flow', 'interest rate', 'rate forecast', 
+      'financial forecast', 'projected', 'estimation', 'anticipate',
+      'foresee', 'projection', 'scenario'
+    ],
+    trades: [
+      'trade', 'transaction', 'deal', 'loan', 'lend', 'borrow', 'lending',
+      'borrowing', 'money market', 'investment', 'deposit', 'rate', 'quote',
+      'offer', 'placement', 'execution', 'settlement', 'maturity',
+      'counterparty', 'interest'
+    ],
+    quotes: [
+      'quote', 'offer', 'request for quote', 'rfq', 'rate', 'best price',
+      'indicative', 'pricing', 'quote request', 'cost', 'fee', 'ask for quote',
+      'bid', 'tender', 'proposal', 'inquiry'
+    ]
+  };
+  
+  // Action keyword groups
+  const actionKeywords = {
+    view: [
+      'show', 'see', 'view', 'get', 'display', 'list', 'check', 'find',
+      'search', 'tell me about', 'what are', 'look at', 'open', 'browse',
+      'explore', 'fetch', 'give me', 'present', 'reveal'
+    ],
+    create: [
+      'create', 'add', 'new', 'make', 'schedule', 'set up', 'arrange',
+      'establish', 'generate', 'initiate', 'start', 'build', 'compose',
+      'draft', 'prepare', 'develop'
+    ],
+    update: [
+      'update', 'edit', 'modify', 'change', 'adjust', 'revise', 'amend',
+      'alter', 'correct', 'fix', 'improve', 'enhance', 'refine'
+    ],
+    delete: [
+      'delete', 'remove', 'cancel', 'eliminate', 'dispose', 'get rid of',
+      'take out', 'erase', 'clear', 'drop', 'terminate', 'end', 'discontinue'
+    ],
+    analyze: [
+      'analyze', 'examine', 'study', 'evaluate', 'assess', 'review', 
+      'investigate', 'interpret', 'understand', 'measure', 'test',
+      'research', 'explore', 'diagnose'
+    ],
+    execute: [
+      'execute', 'perform', 'do', 'conduct', 'carry out', 'run', 'implement',
+      'complete', 'finish', 'undertake', 'accomplish', 'achieve', 'fulfill'
+    ]
+  };
+  
+  // Direct phrase patterns (for high confidence matches)
+  const directPhrases = {
+    'calendar_view': [
+      'show me the calendar', 'view calendar', 'financial calendar', 
+      'check calendar', 'view my events', 'show events', 'upcoming events',
+      'what events are coming up', 'when is my next meeting',
+      'do i have any meetings', 'what is on the schedule',
+      'what is due soon', 'any maturities coming up', 'trades maturing soon'
+    ],
+    'documents_view': [
+      'show me the documents', 'view documents', 'document list', 
+      'my documents', 'shared documents', 'document management',
+      'search documents', 'recent documents', 'find me the report',
+      'i need to see the files', 'where are the statements',
+      'pull up that document about', 'do we have documentation on'
+    ],
+    'forecasting_view': [
+      'show me the forecast', 'view forecasts', 'interest rate trends',
+      'cash flow forecast', 'forecasting tools', 'rate predictions',
+      'future rates', 'show me the projections', 'financial forecasts',
+      'what will rates do', 'how are rates trending', 
+      'predict future cash flow', 'anticipated market movements'
+    ],
+    'trades_view': [
+      'show me my trades', 'view transactions', 'trade history',
+      'see my deals', 'recent trades', 'view loan details',
+      'check my investments', 'active loans', 'pending trades',
+      'what trades do i have', 'show me what i have borrowed',
+      'who have i lent to', 'transactions to date'
+    ],
+    'trades_create': [
+      'create a new trade', 'i want to lend', 'i need to borrow',
+      'place a new deposit', 'arrange a loan', 'new transaction',
+      'start a new deal', 'execute a trade', 'i would like to invest',
+      'can you place a trade', 'help me lend out some money',
+      'i want to offer funds to', 'need to borrow from'
+    ],
+    'quotes_view': [
+      'show me quotes', 'view current rates', 'what rates are available',
+      'check the offers', 'see latest quotes', 'current lending rates',
+      'best borrowing rates', 'view rate sheet', 'what is the market like',
+      'where can i get the best rate', 'who is offering good rates'
+    ],
+    'quotes_create': [
+      'request a quote', 'get me a rate', 'i need pricing', 
+      'ask for a quote', 'get an offer', 'rfq', 'price inquiry', 
+      'how much to borrow', 'what rate can i get', 'find me the best offer',
+      'who will give me the best rate', 'shop around for rates'
+    ]
+  };
+  
+  // Check direct phrases first (highest confidence)
+  for (const [intentKey, phrases] of Object.entries(directPhrases)) {
+    const [feature, action] = intentKey.split('_');
+    if (phrases.some(phrase => lowerCaseMsg.includes(phrase))) {
+      return {
+        feature,
+        action,
+        confidence: 0.9,
+        extractedParams: extractParameters(lowerCaseMsg, feature)
+      };
+    }
+  }
+  
+  // Analyze message for feature and action keywords
+  let bestMatch: CommandIntent | null = null;
+  let highestScore = 0;
+  
+  // Scan for feature + action combinations
+  for (const [feature, featureTerms] of Object.entries(featureKeywords)) {
+    for (const [action, actionTerms] of Object.entries(actionKeywords)) {
+      // Calculate how many terms from each category are present
+      const featureMatches = featureTerms.filter(term => lowerCaseMsg.includes(term)).length;
+      const actionMatches = actionTerms.filter(term => lowerCaseMsg.includes(term)).length;
+      
+      if (featureMatches > 0 && actionMatches > 0) {
+        // Calculate a confidence score based on matches
+        const featureScore = featureMatches / featureTerms.length;
+        const actionScore = actionMatches / actionTerms.length;
+        const combinedScore = (featureScore * 0.6) + (actionScore * 0.4); // Feature slightly more important
+        
+        if (combinedScore > highestScore) {
+          highestScore = combinedScore;
+          bestMatch = {
+            feature,
+            action,
+            confidence: combinedScore,
+            extractedParams: extractParameters(lowerCaseMsg, feature)
+          };
+        }
+      }
+    }
+  }
+  
+  // If we have a reasonable match, return it
+  if (bestMatch && bestMatch.confidence > 0.3) {
+    return bestMatch;
+  }
+  
+  // Check for feature mentions even without clear actions
+  for (const [feature, featureTerms] of Object.entries(featureKeywords)) {
+    const featureMatches = featureTerms.filter(term => lowerCaseMsg.includes(term)).length;
+    if (featureMatches > 1) { // Need at least 2 terms for confidence
+      const featureScore = featureMatches / featureTerms.length;
+      if (featureScore > 0.4) { // Need reasonable confidence
+        return {
+          feature,
+          action: 'view', // Default to view as safest action
+          confidence: featureScore * 0.7, // Reduce confidence as guessing the action
+          extractedParams: extractParameters(lowerCaseMsg, feature)
+        };
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Extract relevant parameters from the user message based on the feature
+ */
+function extractParameters(message: string, feature: string): Record<string, any> {
+  const params: Record<string, any> = {};
+  
+  // Extract dates if present
+  const datePatterns = [
+    /today/i,
+    /tomorrow/i,
+    /yesterday/i,
+    /next week/i,
+    /this week/i,
+    /last week/i,
+    /next month/i,
+    /this month/i,
+    /last month/i,
+    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2}/i,
+    /\d{1,2} (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*/i,
+    /\d{1,2}\/\d{1,2}(\/\d{2,4})?/i,
+    /\d{4}-\d{2}-\d{2}/i
+  ];
+  
+  for (const pattern of datePatterns) {
+    const match = message.match(pattern);
+    if (match) {
+      params.date = match[0];
+      break;
+    }
+  }
+  
+  // Extract amounts for trades/quotes
+  if (feature === 'trades' || feature === 'quotes') {
+    const amountPatterns = [
+      /£\s*\d+(\.\d+)?\s*(million|m|k|thousand)?/i,
+      /\d+(\.\d+)?\s*(million|m|k|thousand)?\s*pounds/i,
+      /\d+(\.\d+)?\s*(million|m|k|thousand)?(\s*£|\s*gbp)/i
+    ];
+    
+    for (const pattern of amountPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        params.amount = match[0];
+        break;
+      }
+    }
+    
+    // Extract rate percentages
+    const ratePatterns = [
+      /(\d+(\.\d+)?)\s*%/i,
+      /(\d+(\.\d+)?)\s*percent/i,
+      /rate\s*of\s*(\d+(\.\d+)?)/i
+    ];
+    
+    for (const pattern of ratePatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        params.rate = match[0];
+        break;
+      }
+    }
+    
+    // Extract duration/tenor
+    const durationPatterns = [
+      /(\d+)\s*(day|week|month|year)s?/i,
+      /(overnight|on|tom next|spot|1w|2w|1m|2m|3m|6m|1y)/i
+    ];
+    
+    for (const pattern of durationPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        params.duration = match[0];
+        break;
+      }
+    }
+  }
+  
+  return params;
+}
+
+/**
  * Check if a message is asking about calendar events
  */
 function isAskingAboutCalendar(message: string): boolean {
-  const lowerCaseMsg = message.toLowerCase();
-  
-  const calendarKeywords = [
-    'calendar',
-    'schedule',
-    'event',
-    'meeting',
-    'appointment',
-    'agenda',
-    'upcoming',
-    'planned',
-    'financial calendar',
-    'events',
-    'when is',
-    'dates',
-    'timetable'
-  ];
-  
-  const actionKeywords = [
-    'show',
-    'see',
-    'view',
-    'get',
-    'display',
-    'list',
-    'check',
-    'tell me',
-    'what are',
-    'upcoming',
-    'this week',
-    'this month',
-    'next week'
-  ];
-  
-  // Direct calendar requests
-  const directRequests = [
-    'show me the calendar',
-    'show calendar',
-    'view calendar',
-    'financial calendar',
-    'check calendar',
-    'view my events',
-    'show events',
-    'upcoming events',
-    'show me the financial calendar',
-    'calendar events',
-    'view the financial calendar'
-  ];
-  
-  // Check direct matches first
-  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
-    return true;
-  }
-  
-  // Check for combinations of calendar terms and action terms
-  const hasCalendarTerm = calendarKeywords.some(term => lowerCaseMsg.includes(term));
-  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
-  
-  return hasCalendarTerm && hasActionTerm;
+  const intent = identifyCommandIntent(message);
+  return intent?.feature === 'calendar';
 }
 
 /**
  * Check if a message is asking about documents
  */
 function isAskingAboutDocuments(message: string): boolean {
-  const lowerCaseMsg = message.toLowerCase();
-  
-  const documentKeywords = [
-    'document',
-    'file',
-    'report',
-    'attachment',
-    'paper',
-    'pdf',
-    'spreadsheet',
-    'financial report',
-    'statement',
-    'policy',
-    'guidance',
-    'records'
-  ];
-  
-  const actionKeywords = [
-    'show',
-    'see',
-    'view',
-    'get',
-    'display',
-    'list',
-    'find',
-    'search',
-    'upload',
-    'download',
-    'share',
-    'manage'
-  ];
-  
-  // Direct document requests
-  const directRequests = [
-    'show me the documents',
-    'show documents',
-    'view documents',
-    'document list',
-    'my documents',
-    'shared documents',
-    'document management',
-    'search documents',
-    'recent documents',
-    'show me my documents'
-  ];
-  
-  // Check direct matches first
-  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
-    return true;
-  }
-  
-  // Check for combinations of document terms and action terms
-  const hasDocumentTerm = documentKeywords.some(term => lowerCaseMsg.includes(term));
-  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
-  
-  return hasDocumentTerm && hasActionTerm;
+  const intent = identifyCommandIntent(message);
+  return intent?.feature === 'documents';
 }
 
 /**
  * Check if a message is asking about forecasting or trends
  */
 function isAskingAboutForecasting(message: string): boolean {
-  const lowerCaseMsg = message.toLowerCase();
-  
-  const forecastKeywords = [
-    'forecast',
-    'predict',
-    'projection',
-    'outlook',
-    'future',
-    'trend',
-    'analysis',
-    'cash flow',
-    'interest rate',
-    'rate forecast',
-    'financial forecast',
-    'projected'
-  ];
-  
-  const actionKeywords = [
-    'show',
-    'see',
-    'view',
-    'get',
-    'display',
-    'analyze',
-    'predict',
-    'project',
-    'what will',
-    'how will',
-    'going to'
-  ];
-  
-  // Direct forecast requests
-  const directRequests = [
-    'show me the forecast',
-    'view forecasts',
-    'interest rate trends',
-    'cash flow forecast',
-    'forecasting tools',
-    'rate predictions',
-    'future rates',
-    'show me the projections',
-    'financial forecasts',
-    'show me interest rate trends'
-  ];
-  
-  // Check direct matches first
-  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
-    return true;
-  }
-  
-  // Check for combinations of forecast terms and action terms
-  const hasForecastTerm = forecastKeywords.some(term => lowerCaseMsg.includes(term));
-  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
-  
-  return hasForecastTerm && hasActionTerm;
+  const intent = identifyCommandIntent(message);
+  return intent?.feature === 'forecasting';
+}
+
+/**
+ * Check if a message is about trades
+ */
+function isAskingAboutTrades(message: string): boolean {
+  const intent = identifyCommandIntent(message);
+  return intent?.feature === 'trades';
+}
+
+/**
+ * Check if a message is about quotes
+ */
+function isAskingAboutQuotes(message: string): boolean {
+  const intent = identifyCommandIntent(message);
+  return intent?.feature === 'quotes';
 }
 
 /**
@@ -479,35 +610,81 @@ function isAskingAboutForecasting(message: string): boolean {
  */
 export async function generateChatResponse(message: string): Promise<string> {
   try {
-    // First, check if this is a command to access a professional feature
-    if (isAskingAboutCalendar(message)) {
-      console.log("User is asking about calendar events");
-      return `{
-        "isFeatureRequest": true,
-        "feature": "calendar",
-        "action": "view",
-        "message": "Here's the financial calendar you requested. You can see all upcoming events, filter by category, or add new events."
-      }`;
-    }
+    // Identify the intent of the message
+    const intent = identifyCommandIntent(message);
+    console.log("Identified intent:", intent);
     
-    if (isAskingAboutDocuments(message)) {
-      console.log("User is asking about documents");
-      return `{
-        "isFeatureRequest": true,
-        "feature": "documents",
-        "action": "view",
-        "message": "Here are the council documents available. You can filter by type, search by keywords, or share documents with other councils."
-      }`;
-    }
-    
-    if (isAskingAboutForecasting(message)) {
-      console.log("User is asking about forecasting or trends");
-      return `{
-        "isFeatureRequest": true,
-        "feature": "forecasting",
-        "action": "view",
-        "message": "Here are the forecasting tools you requested. You can view interest rate trends, create cash flow projections, or analyze financial scenarios."
-      }`;
+    // If we have a valid intent, process it as a feature request
+    if (intent && intent.confidence > 0.4) {
+      const { feature, action, extractedParams } = intent;
+      
+      // Handle calendar requests
+      if (feature === 'calendar') {
+        console.log("User is asking about calendar events");
+        return JSON.stringify({
+          isFeatureRequest: true,
+          feature: "calendar",
+          action: action || "view",
+          params: extractedParams,
+          message: "Here's the financial calendar you requested. You can see all upcoming events, filter by category, or add new events."
+        });
+      }
+      
+      // Handle document requests
+      if (feature === 'documents') {
+        console.log("User is asking about documents");
+        return JSON.stringify({
+          isFeatureRequest: true,
+          feature: "documents",
+          action: action || "view",
+          params: extractedParams,
+          message: "Here are the council documents available. You can filter by type, search by keywords, or share documents with other councils."
+        });
+      }
+      
+      // Handle forecasting requests
+      if (feature === 'forecasting') {
+        console.log("User is asking about forecasting or trends");
+        return JSON.stringify({
+          isFeatureRequest: true,
+          feature: "forecasting",
+          action: action || "view",
+          params: extractedParams,
+          message: "Here are the forecasting tools you requested. You can view interest rate trends, create cash flow projections, or analyze financial scenarios."
+        });
+      }
+      
+      // Handle trade requests
+      if (feature === 'trades') {
+        console.log("User is asking about trades");
+        const responseMessage = action === 'create' 
+          ? "I'll help you set up a new trade. Please confirm the details below or make any needed adjustments."
+          : "Here are the trades you requested. You can filter by status, counterparty, or date range.";
+          
+        return JSON.stringify({
+          isFeatureRequest: true,
+          feature: "trades",
+          action: action || "view",
+          params: extractedParams,
+          message: responseMessage
+        });
+      }
+      
+      // Handle quote requests
+      if (feature === 'quotes') {
+        console.log("User is asking about quotes");
+        const responseMessage = action === 'create' 
+          ? "I'll help you request quotes from other councils. Please confirm the details below or make any needed adjustments."
+          : "Here are the current quotes available. You can filter by rate, duration, or amount.";
+          
+        return JSON.stringify({
+          isFeatureRequest: true,
+          feature: "quotes",
+          action: action || "view",
+          params: extractedParams,
+          message: responseMessage
+        });
+      }
     }
     
     // If in development mode and no API key is available, return sample response

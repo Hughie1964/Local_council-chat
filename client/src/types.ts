@@ -1,3 +1,11 @@
+export interface FeatureRequest {
+  isFeatureRequest: true;
+  feature: 'calendar' | 'documents' | 'forecasting' | 'trades' | 'quotes';
+  action: 'view' | 'create' | 'update' | 'delete' | 'analyze' | 'execute';
+  params?: Record<string, any>;
+  message: string;
+}
+
 export interface Message {
   id: number;
   sessionId: string;
@@ -5,6 +13,7 @@ export interface Message {
   isUser: boolean;
   timestamp: string;
   loading?: boolean;
+  featureRequest?: FeatureRequest; // Optional feature request info
 }
 
 export interface Session {

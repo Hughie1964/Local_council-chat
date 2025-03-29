@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef } from "react";
-import { Message } from "@/types";
+import { Message, FeatureRequest } from "@/types";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { Button } from "@/components/ui/button";
@@ -111,14 +111,35 @@ export const ChatContainer: FC<ChatContainerProps> = ({
       // Send the message to the server
       const response = await sendMessage(content, sessionId);
       
+      // Check if the response is potentially a JSON feature request
+      let featureRequest: FeatureRequest | undefined = undefined;
+      let messageContent = response.message;
+      
+      // Try to parse the response as JSON for feature requests
+      try {
+        if (response.message.trim().startsWith('{') && response.message.trim().endsWith('}')) {
+          const parsedResponse = JSON.parse(response.message);
+          
+          // Check if this is a feature request
+          if (parsedResponse.isFeatureRequest) {
+            featureRequest = parsedResponse as FeatureRequest;
+            messageContent = parsedResponse.message || "I can help you with that. Here's what you requested.";
+          }
+        }
+      } catch (parseError) {
+        // Not JSON or not a feature request, use the original message
+        console.log("Response is not a feature request JSON", parseError);
+      }
+      
       // Create the AI response message
-      const aiResponseMessage = {
+      const aiResponseMessage: Message = {
         id: Date.now() + 2,
         sessionId: sessionId || response.sessionId,
-        content: response.message,
+        content: messageContent,
         isUser: false,
         timestamp: new Date().toISOString(),
-        loading: false
+        loading: false,
+        featureRequest: featureRequest
       };
       
       // Update messages with the AI response
@@ -126,9 +147,12 @@ export const ChatContainer: FC<ChatContainerProps> = ({
         msg.loading ? aiResponseMessage : msg
       ));
       
+      // Determine notification title based on whether it's a feature request
+      const notificationTitle = featureRequest ? `${featureRequest.feature.charAt(0).toUpperCase() + featureRequest.feature.slice(1)} Request` : "New Message";
+      
       // Show notification for the new message
       toast({
-        title: "New Message",
+        title: notificationTitle,
         description: "You've received a new message from Money Market Assistant"
       });
       
@@ -173,6 +197,101 @@ export const ChatContainer: FC<ChatContainerProps> = ({
       }
     }
   };
+  
+  // Handler for feature actions triggered by the ChatMessage component
+  const handleFeatureAction = (feature: string, action: string, params?: Record<string, any>) => {
+    console.log(`Feature action: ${feature}, action: ${action}`, params);
+    
+    // Handle each feature type differently
+    switch (feature) {
+      case 'calendar':
+        handleCalendarAction(action, params);
+        break;
+        
+      case 'documents':
+        handleDocumentsAction(action, params);
+        break;
+        
+      case 'forecasting':
+        handleForecastingAction(action, params);
+        break;
+        
+      case 'trades':
+        handleTradesAction(action, params);
+        break;
+        
+      case 'quotes':
+        handleQuotesAction(action, params);
+        break;
+        
+      default:
+        toast({
+          title: "Feature not implemented",
+          description: `The ${feature} feature is not yet implemented.`,
+          variant: "destructive"
+        });
+    }
+  };
+  
+  // Handle calendar-related actions
+  const handleCalendarAction = (action: string, params?: Record<string, any>) => {
+    // Placeholder: Would implement routing/API calls for calendar actions
+    toast({
+      title: "Calendar Action",
+      description: `${action.charAt(0).toUpperCase() + action.slice(1)} calendar feature triggered.`
+    });
+    
+    // Here we would route to the calendar page or open a modal
+    // window.location.href = '/calendar';
+  };
+  
+  // Handle document-related actions
+  const handleDocumentsAction = (action: string, params?: Record<string, any>) => {
+    // Placeholder: Would implement routing/API calls for document actions
+    toast({
+      title: "Documents Action",
+      description: `${action.charAt(0).toUpperCase() + action.slice(1)} documents feature triggered.`
+    });
+    
+    // Here we would route to the documents page or open a modal
+    // window.location.href = '/documents';
+  };
+  
+  // Handle forecasting-related actions
+  const handleForecastingAction = (action: string, params?: Record<string, any>) => {
+    // Placeholder: Would implement routing/API calls for forecasting actions
+    toast({
+      title: "Forecasting Action",
+      description: `${action.charAt(0).toUpperCase() + action.slice(1)} forecasting feature triggered.`
+    });
+    
+    // Here we would route to the forecasting page or open a modal
+    // window.location.href = '/forecasting';
+  };
+  
+  // Handle trade-related actions
+  const handleTradesAction = (action: string, params?: Record<string, any>) => {
+    // Placeholder: Would implement routing/API calls for trade actions
+    toast({
+      title: "Trades Action",
+      description: `${action.charAt(0).toUpperCase() + action.slice(1)} trades feature triggered.`
+    });
+    
+    // Here we would route to the trades page or open a modal
+    // window.location.href = '/trades';
+  };
+  
+  // Handle quote-related actions
+  const handleQuotesAction = (action: string, params?: Record<string, any>) => {
+    // Placeholder: Would implement routing/API calls for quote actions
+    toast({
+      title: "Quotes Action",
+      description: `${action.charAt(0).toUpperCase() + action.slice(1)} quotes feature triggered.`
+    });
+    
+    // Here we would route to the quotes page or open a modal
+    // window.location.href = '/quotes';
+  };
 
   return (
     <main className="flex-1 flex flex-col bg-white h-full">
@@ -199,7 +318,11 @@ export const ChatContainer: FC<ChatContainerProps> = ({
       <ScrollArea ref={scrollAreaRef} className="flex-1 h-[calc(100vh-14rem)] overflow-y-auto">
         <div className="p-4 space-y-4">
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage 
+              key={message.id} 
+              message={message} 
+              onFeatureAction={handleFeatureAction}
+            />
           ))}
         </div>
       </ScrollArea>
