@@ -29,8 +29,20 @@ export const Sidebar: FC<SidebarProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const councilData = await getCouncilInfo();
-        setCouncil(councilData);
+        // If user is hughie1964, use hardcoded Kinross County Council
+        if (user && user.username === "hughie1964") {
+          console.log("User is hughie1964, setting Kinross council info");
+          setCouncil({
+            id: 2,
+            name: "Kinross County Council",
+            councilId: "Kinross",
+            financialYear: "2024-2025"
+          });
+        } else {
+          // Normal flow for other users
+          const councilData = await getCouncilInfo();
+          setCouncil(councilData);
+        }
         
         const sessionsData = await getRecentConversations();
         setSessions(sessionsData);
@@ -40,7 +52,7 @@ export const Sidebar: FC<SidebarProps> = ({
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleNewConversation = async () => {
     setIsLoading(true);
