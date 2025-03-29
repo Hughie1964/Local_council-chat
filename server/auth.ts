@@ -4,6 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import rateLimit from "express-rate-limit";
@@ -18,14 +19,19 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  // Use bcrypt for new passwords
+  return bcrypt.hash(password, 10);
 }
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
-    // Make sure we have a properly formatted stored password
+    // Check if the stored password is in bcrypt format (starts with $2b$)
+    if (stored.startsWith('$2b$')) {
+      console.log("Using bcrypt comparison");
+      return bcrypt.compare(supplied, stored);
+    }
+    
+    // Fall back to our custom format for legacy passwords
     if (!stored || !stored.includes('.')) {
       console.log("Invalid stored password format");
       return false;
