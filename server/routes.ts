@@ -40,34 +40,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the authenticated user
       const user = req.user;
+      console.log("User council lookup for:", user.username, "councilId:", user.councilId);
       
       // If user has a councilId, use it to look up their council
       if (user.councilId) {
         // Try to find the user's council in the database by councilId
+        console.log("Looking up council with councilId:", user.councilId);
         const userCouncil = await storage.getCouncilByCouncilId(user.councilId);
         
         if (userCouncil) {
+          console.log("Found council:", userCouncil);
           return res.json(userCouncil);
         }
         
+        console.log("Council not found in database");
         // If the council can't be found but user has councilId,
         // create a basic council with the ID
         const customCouncil = {
           id: 0, // Temporary ID
           name: `${user.username}'s Council`,
           councilId: user.councilId,
-          financialYear: "2023/24"
+          financialYear: "2024-2025"
         };
         
         return res.json(customCouncil);
       }
       
       // If the user doesn't have a councilId, return the default council
+      console.log("User has no councilId, returning default council");
       const defaultCouncil = {
         id: 1,
         name: "Birmingham City Council",
         councilId: "BCC-4578",
-        financialYear: "2023/24"
+        financialYear: "2024-2025"
       };
       
       res.json(defaultCouncil);
