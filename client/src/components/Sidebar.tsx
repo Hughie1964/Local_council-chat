@@ -90,16 +90,18 @@ export const Sidebar: FC<SidebarProps> = ({
               Council Information
             </h2>
             <div className="bg-neutral-100 rounded-lg p-3 mb-3 relative">
-              {user && (
-                <div className="absolute top-2 right-2 flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-green-600 font-medium">Online</span>
-                </div>
-              )}
-              <p className="text-sm font-medium">{council?.name || "Loading council..."}</p>
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-sm font-medium">{council?.name || "Loading council..."}</p>
+                {user && (
+                  <div className="flex items-center ml-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-0.5"></span>
+                    <span className="text-[10px] text-green-600">Online</span>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-secondary/70">{`ID: ${council?.councilId || "..."}`}</p>
               {user && (
-                <p className="text-xs text-primary mt-1">Logged in as {user.username}</p>
+                <p className="text-xs text-primary mt-1 truncate">@{user.username}</p>
               )}
             </div>
             <div className="flex items-center justify-between text-xs text-secondary/70">
