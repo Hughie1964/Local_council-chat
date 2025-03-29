@@ -7,7 +7,24 @@ import { analyzeMessageForTrade } from "./trade-analyzer";
 import { fetchUKEconomicNews, fetchUKFinancialHeadlines } from './news-service';
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { insertMessageSchema, insertTradeSchema, updateTradeSchema, councils } from "@shared/schema";
+import { 
+  insertMessageSchema, 
+  insertTradeSchema, 
+  updateTradeSchema, 
+  councils,
+  insertDocumentSchema,
+  insertDocumentSharingSchema,
+  insertCalendarEventSchema,
+  insertEventAttendeeSchema,
+  insertDirectMessageSchema,
+  insertGroupSchema,
+  insertGroupMemberSchema,
+  insertGroupMessageSchema,
+  insertInterestRateSchema,
+  insertRateForecastSchema,
+  insertCashFlowForecastSchema,
+  insertCashFlowDataPointSchema
+} from "@shared/schema";
 import { WebSocketServer, WebSocket } from 'ws';
 import { setupAuth } from "./auth";
 import { db } from "./db";
@@ -393,6 +410,1046 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Document Management API routes
+  
+  // Get all documents for the user's council
+  app.get("/api/documents", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get council documents by default
+      // Type assertion to ensure councilId is treated as string
+      const councilId = req.user.councilId as string;
+      const documents = await storage.getCouncilDocuments(councilId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+  
+  // Get documents uploaded by the current user
+  app.get("/api/documents/user", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get documents uploaded by the current user
+      const documents = await storage.getUserDocuments(req.user.id);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching user documents:", error);
+      res.status(500).json({ message: "Failed to fetch user documents" });
+    }
+  });
+  
+  // Search documents
+  app.get("/api/documents/search", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      
+      const documents = await storage.searchDocuments(query);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error searching documents:", error);
+      res.status(500).json({ message: "Failed to search documents" });
+    }
+  });
+  
+  // Get a specific document by ID
+  app.get("/api/documents/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const documentId = parseInt(req.params.id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has access to this document
+      if (document.accessLevel === 'private' && document.uploaderId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      if (document.accessLevel === 'council' && document.councilId !== req.user.councilId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // For group access, we would check if user is in the group
+      // This would require additional queries to check group membership
+      
+      res.json(document);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+      res.status(500).json({ message: "Failed to fetch document" });
+    }
+  });
+  
+  // Create a new document
+  app.post("/api/documents", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const documentData = req.body;
+      
+      // Validate with schema
+      const result = insertDocumentSchema.safeParse({
+        ...documentData,
+        uploaderId: req.user.id,
+        councilId: req.user.councilId
+      });
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const document = await storage.createDocument(result.data);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error creating document:", error);
+      res.status(500).json({ message: "Failed to create document" });
+    }
+  });
+  
+  // Update a document
+  app.patch("/api/documents/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const documentId = parseInt(req.params.id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has permission to update (only document owner or admin/super_user)
+      if (document.uploaderId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedDocument = await storage.updateDocument(documentId, req.body);
+      res.json(updatedDocument);
+    } catch (error) {
+      console.error("Error updating document:", error);
+      res.status(500).json({ message: "Failed to update document" });
+    }
+  });
+  
+  // Delete a document
+  app.delete("/api/documents/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const documentId = parseInt(req.params.id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has permission to delete (only document owner or admin/super_user)
+      if (document.uploaderId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const success = await storage.deleteDocument(documentId);
+      if (success) {
+        res.sendStatus(204);
+      } else {
+        res.status(500).json({ message: "Failed to delete document" });
+      }
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ message: "Failed to delete document" });
+    }
+  });
+  
+  // Share a document with other users/groups
+  app.post("/api/documents/:id/share", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const documentId = parseInt(req.params.id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has permission to share (only document owner or admin/super_user)
+      if (document.uploaderId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const sharingData = {
+        documentId,
+        ...req.body
+      };
+      
+      // Validate with schema
+      const result = insertDocumentSharingSchema.safeParse(sharingData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const sharing = await storage.shareDocument(result.data);
+      res.status(201).json(sharing);
+    } catch (error) {
+      console.error("Error sharing document:", error);
+      res.status(500).json({ message: "Failed to share document" });
+    }
+  });
+  
+  // Calendar Events API routes
+  
+  // Get all calendar events for the user's council
+  app.get("/api/calendar-events", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Type assertion to ensure councilId is treated as string
+      const councilId = req.user.councilId as string;
+      const events = await storage.getCouncilCalendarEvents(councilId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching calendar events:", error);
+      res.status(500).json({ message: "Failed to fetch calendar events" });
+    }
+  });
+  
+  // Get calendar events for the current user
+  app.get("/api/calendar-events/user", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const events = await storage.getUserCalendarEvents(req.user.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching user calendar events:", error);
+      res.status(500).json({ message: "Failed to fetch user calendar events" });
+    }
+  });
+  
+  // Get a specific calendar event
+  app.get("/api/calendar-events/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Calendar event not found" });
+      }
+      
+      // Check if user has access to this event
+      // For private events, only the creator can see them
+      if (event.isPrivate && event.creatorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // For council events, check if the user belongs to the council
+      if (event.councilId && event.councilId !== req.user.councilId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error fetching calendar event:", error);
+      res.status(500).json({ message: "Failed to fetch calendar event" });
+    }
+  });
+  
+  // Create a new calendar event
+  app.post("/api/calendar-events", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventData = req.body;
+      
+      // Validate with schema
+      const result = insertCalendarEventSchema.safeParse({
+        ...eventData,
+        creatorId: req.user.id,
+        councilId: req.user.councilId
+      });
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const event = await storage.createCalendarEvent(result.data);
+      
+      // Broadcast notification of new calendar event
+      broadcastNotification({
+        type: 'new_calendar_event',
+        event: {
+          id: event.id,
+          title: event.title,
+          startTime: event.startTime,
+          councilId: event.councilId
+        }
+      });
+      
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating calendar event:", error);
+      res.status(500).json({ message: "Failed to create calendar event" });
+    }
+  });
+  
+  // Update a calendar event
+  app.patch("/api/calendar-events/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Calendar event not found" });
+      }
+      
+      // Check if user has permission to update (only event creator or admin/super_user)
+      if (event.creatorId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedEvent = await storage.updateCalendarEvent(eventId, req.body);
+      
+      // Broadcast notification of updated calendar event
+      if (updatedEvent) {
+        broadcastNotification({
+          type: 'update_calendar_event',
+          event: {
+            id: updatedEvent.id,
+            title: updatedEvent.title,
+            startTime: updatedEvent.startTime,
+            councilId: updatedEvent.councilId
+          }
+        });
+      }
+      
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error updating calendar event:", error);
+      res.status(500).json({ message: "Failed to update calendar event" });
+    }
+  });
+  
+  // Delete a calendar event
+  app.delete("/api/calendar-events/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Calendar event not found" });
+      }
+      
+      // Check if user has permission to delete (only event creator or admin/super_user)
+      if (event.creatorId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const success = await storage.deleteCalendarEvent(eventId);
+      if (success) {
+        // Broadcast notification of deleted calendar event
+        broadcastNotification({
+          type: 'delete_calendar_event',
+          eventId: eventId
+        });
+        
+        res.sendStatus(204);
+      } else {
+        res.status(500).json({ message: "Failed to delete calendar event" });
+      }
+    } catch (error) {
+      console.error("Error deleting calendar event:", error);
+      res.status(500).json({ message: "Failed to delete calendar event" });
+    }
+  });
+  
+  // Add an attendee to a calendar event
+  app.post("/api/calendar-events/:id/attendees", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Calendar event not found" });
+      }
+      
+      const attendeeData = {
+        eventId,
+        ...req.body,
+        responseStatus: req.body.responseStatus || 'pending'
+      };
+      
+      // Validate with schema
+      const result = insertEventAttendeeSchema.safeParse(attendeeData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const attendee = await storage.addEventAttendee(result.data);
+      res.status(201).json(attendee);
+    } catch (error) {
+      console.error("Error adding event attendee:", error);
+      res.status(500).json({ message: "Failed to add event attendee" });
+    }
+  });
+  
+  // Get attendees for a calendar event
+  app.get("/api/calendar-events/:id/attendees", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const attendees = await storage.getEventAttendees(eventId);
+      res.json(attendees);
+    } catch (error) {
+      console.error("Error fetching event attendees:", error);
+      res.status(500).json({ message: "Failed to fetch event attendees" });
+    }
+  });
+  
+  // Update attendee response status
+  app.patch("/api/calendar-events/attendees/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const attendeeId = parseInt(req.params.id);
+      if (isNaN(attendeeId)) {
+        return res.status(400).json({ message: "Invalid attendee ID" });
+      }
+      
+      const { responseStatus } = req.body;
+      if (!responseStatus || !['accepted', 'declined', 'tentative', 'pending'].includes(responseStatus)) {
+        return res.status(400).json({ message: "Invalid response status" });
+      }
+      
+      const updatedAttendee = await storage.updateAttendeeResponse(attendeeId, responseStatus);
+      
+      if (!updatedAttendee) {
+        return res.status(404).json({ message: "Attendee not found" });
+      }
+      
+      res.json(updatedAttendee);
+    } catch (error) {
+      console.error("Error updating attendee response:", error);
+      res.status(500).json({ message: "Failed to update attendee response" });
+    }
+  });
+  
+  // Messaging API routes
+  
+  // Create a group
+  app.post("/api/groups", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupData = {
+        ...req.body,
+        creatorId: req.user.id
+      };
+      
+      // Validate with schema
+      const result = insertGroupSchema.safeParse(groupData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const group = await storage.createGroup(result.data);
+      
+      // Add creator as a member automatically
+      await storage.addGroupMember({
+        groupId: group.id,
+        userId: req.user.id,
+        role: 'admin'
+      });
+      
+      res.status(201).json(group);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      res.status(500).json({ message: "Failed to create group" });
+    }
+  });
+  
+  // Get groups for the current user
+  app.get("/api/groups", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groups = await storage.getUserGroups(req.user.id);
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ message: "Failed to fetch groups" });
+    }
+  });
+  
+  // Get a specific group
+  app.get("/api/groups/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupId = parseInt(req.params.id);
+      if (isNaN(groupId)) {
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      // Check if user is a member of the group
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === req.user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json({
+        ...group,
+        members
+      });
+    } catch (error) {
+      console.error("Error fetching group:", error);
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  });
+  
+  // Add member to a group
+  app.post("/api/groups/:id/members", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupId = parseInt(req.params.id);
+      if (isNaN(groupId)) {
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      // Check if user is an admin of the group
+      const members = await storage.getGroupMembers(groupId);
+      const isAdmin = members.some(member => 
+        member.userId === req.user.id && member.role === 'admin'
+      );
+      
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only group admins can add members" });
+      }
+      
+      const memberData = {
+        groupId,
+        ...req.body,
+        role: req.body.role || 'member'
+      };
+      
+      // Validate with schema
+      const result = insertGroupMemberSchema.safeParse(memberData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const member = await storage.addGroupMember(result.data);
+      
+      // Broadcast notification of new group member
+      broadcastNotification({
+        type: 'group_member_added',
+        groupId,
+        userId: memberData.userId
+      });
+      
+      res.status(201).json(member);
+    } catch (error) {
+      console.error("Error adding group member:", error);
+      res.status(500).json({ message: "Failed to add group member" });
+    }
+  });
+  
+  // Remove member from a group
+  app.delete("/api/groups/:groupId/members/:userId", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(groupId) || isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid group ID or user ID" });
+      }
+      
+      // Check if user is an admin of the group or removing themselves
+      const members = await storage.getGroupMembers(groupId);
+      const isAdmin = members.some(member => 
+        member.userId === req.user.id && member.role === 'admin'
+      );
+      const isSelf = userId === req.user.id;
+      
+      if (!isAdmin && !isSelf) {
+        return res.status(403).json({ message: "Only group admins can remove members" });
+      }
+      
+      const success = await storage.removeGroupMember(groupId, userId);
+      
+      if (success) {
+        // Broadcast notification of member removal
+        broadcastNotification({
+          type: 'group_member_removed',
+          groupId,
+          userId
+        });
+        
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "Member not found in group" });
+      }
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ message: "Failed to remove group member" });
+    }
+  });
+  
+  // Send a message to a group
+  app.post("/api/groups/:id/messages", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupId = parseInt(req.params.id);
+      if (isNaN(groupId)) {
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      // Check if user is a member of the group
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === req.user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: "Only group members can send messages" });
+      }
+      
+      const messageData = {
+        groupId,
+        senderId: req.user.id,
+        ...req.body
+      };
+      
+      // Validate with schema
+      const result = insertGroupMessageSchema.safeParse(messageData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const message = await storage.sendGroupMessage(result.data);
+      
+      // Broadcast notification of new group message
+      broadcastNotification({
+        type: 'new_group_message',
+        groupId,
+        message: {
+          id: message.id,
+          content: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+          senderId: message.senderId,
+          senderName: req.user.username,
+          timestamp: message.timestamp
+        }
+      });
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error sending group message:", error);
+      res.status(500).json({ message: "Failed to send group message" });
+    }
+  });
+  
+  // Get messages for a group
+  app.get("/api/groups/:id/messages", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const groupId = parseInt(req.params.id);
+      if (isNaN(groupId)) {
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      // Check if user is a member of the group
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === req.user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: "Only group members can view messages" });
+      }
+      
+      const messages = await storage.getGroupMessages(groupId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching group messages:", error);
+      res.status(500).json({ message: "Failed to fetch group messages" });
+    }
+  });
+  
+  // Send a direct message to another user
+  app.post("/api/direct-messages", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const messageData = {
+        senderId: req.user.id,
+        ...req.body
+      };
+      
+      // Validate with schema
+      const result = insertDirectMessageSchema.safeParse(messageData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const message = await storage.sendDirectMessage(result.data);
+      
+      // Broadcast notification of new direct message to recipient
+      broadcastNotification({
+        type: 'new_direct_message',
+        recipientId: message.recipientId,
+        message: {
+          id: message.id,
+          content: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+          senderId: message.senderId,
+          senderName: req.user.username,
+          timestamp: message.timestamp
+        }
+      });
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error sending direct message:", error);
+      res.status(500).json({ message: "Failed to send direct message" });
+    }
+  });
+  
+  // Get conversation between two users
+  app.get("/api/conversations/:userId", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const messages = await storage.getConversation(req.user.id, userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({ message: "Failed to fetch conversation" });
+    }
+  });
+  
+  // Get all direct messages for current user
+  app.get("/api/direct-messages", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const messages = await storage.getUserDirectMessages(req.user.id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching direct messages:", error);
+      res.status(500).json({ message: "Failed to fetch direct messages" });
+    }
+  });
+  
+  // Mark direct message as read
+  app.patch("/api/direct-messages/:id/read", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const messageId = parseInt(req.params.id);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ message: "Invalid message ID" });
+      }
+      
+      const updatedMessage = await storage.markDirectMessageAsRead(messageId);
+      
+      if (!updatedMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+  
+  // Interest Rates and Forecasting API routes
+  
+  // Add interest rate
+  app.post("/api/interest-rates", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Only admin or super_user can add interest rates
+    if (req.user.role !== 'admin' && req.user.role !== 'super_user') {
+      return res.status(403).json({ message: "Only admins can add interest rates" });
+    }
+    
+    try {
+      const rateData = {
+        ...req.body,
+        addedById: req.user.id
+      };
+      
+      // Validate with schema
+      const result = insertInterestRateSchema.safeParse(rateData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const rate = await storage.addInterestRate(result.data);
+      
+      // Broadcast notification of new interest rate
+      broadcastNotification({
+        type: 'new_interest_rate',
+        rate: {
+          id: rate.id,
+          name: rate.name,
+          value: rate.value,
+          effectiveDate: rate.effectiveDate
+        }
+      });
+      
+      res.status(201).json(rate);
+    } catch (error) {
+      console.error("Error adding interest rate:", error);
+      res.status(500).json({ message: "Failed to add interest rate" });
+    }
+  });
+  
+  // Get latest interest rates
+  app.get("/api/interest-rates/latest", async (req: Request, res: Response) => {
+    try {
+      const rates = await storage.getLatestInterestRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching latest interest rates:", error);
+      res.status(500).json({ message: "Failed to fetch latest interest rates" });
+    }
+  });
+  
+  // Get interest rate history for a specific rate name
+  app.get("/api/interest-rates/:name/history", async (req: Request, res: Response) => {
+    try {
+      const { name } = req.params;
+      const rates = await storage.getInterestRateHistory(name);
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching interest rate history:", error);
+      res.status(500).json({ message: "Failed to fetch interest rate history" });
+    }
+  });
+  
+  // Create a rate forecast
+  app.post("/api/rate-forecasts", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const forecastData = {
+        ...req.body,
+        createdById: req.user.id
+      };
+      
+      // Validate with schema
+      const result = insertRateForecastSchema.safeParse(forecastData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const forecast = await storage.createRateForecast(result.data);
+      res.status(201).json(forecast);
+    } catch (error) {
+      console.error("Error creating rate forecast:", error);
+      res.status(500).json({ message: "Failed to create rate forecast" });
+    }
+  });
+  
+  // Get rate forecasts for a specific rate name
+  app.get("/api/rate-forecasts/:name", async (req: Request, res: Response) => {
+    try {
+      const { name } = req.params;
+      const forecasts = await storage.getRateForecasts(name);
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching rate forecasts:", error);
+      res.status(500).json({ message: "Failed to fetch rate forecasts" });
+    }
+  });
+  
+  // Create a cash flow forecast
+  app.post("/api/cash-flow-forecasts", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const forecastData = {
+        ...req.body,
+        createdById: req.user.id,
+        councilId: req.user.councilId
+      };
+      
+      // Validate with schema
+      const result = insertCashFlowForecastSchema.safeParse(forecastData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const forecast = await storage.createCashFlowForecast(result.data);
+      res.status(201).json(forecast);
+    } catch (error) {
+      console.error("Error creating cash flow forecast:", error);
+      res.status(500).json({ message: "Failed to create cash flow forecast" });
+    }
+  });
+  
+  // Get a specific cash flow forecast
+  app.get("/api/cash-flow-forecasts/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const forecastId = parseInt(req.params.id);
+      if (isNaN(forecastId)) {
+        return res.status(400).json({ message: "Invalid forecast ID" });
+      }
+      
+      const forecast = await storage.getCashFlowForecast(forecastId);
+      
+      if (!forecast) {
+        return res.status(404).json({ message: "Forecast not found" });
+      }
+      
+      if (forecast.councilId !== req.user.councilId && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const dataPoints = await storage.getCashFlowDataPoints(forecastId);
+      
+      res.json({
+        ...forecast,
+        dataPoints
+      });
+    } catch (error) {
+      console.error("Error fetching cash flow forecast:", error);
+      res.status(500).json({ message: "Failed to fetch cash flow forecast" });
+    }
+  });
+  
+  // Get cash flow forecasts for the user's council
+  app.get("/api/cash-flow-forecasts", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Type assertion to ensure councilId is treated as string
+      const councilId = req.user.councilId as string;
+      const forecasts = await storage.getCouncilCashFlowForecasts(councilId);
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching cash flow forecasts:", error);
+      res.status(500).json({ message: "Failed to fetch cash flow forecasts" });
+    }
+  });
+  
+  // Add a data point to a cash flow forecast
+  app.post("/api/cash-flow-forecasts/:id/data-points", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const forecastId = parseInt(req.params.id);
+      if (isNaN(forecastId)) {
+        return res.status(400).json({ message: "Invalid forecast ID" });
+      }
+      
+      const forecast = await storage.getCashFlowForecast(forecastId);
+      
+      if (!forecast) {
+        return res.status(404).json({ message: "Forecast not found" });
+      }
+      
+      if (forecast.councilId !== req.user.councilId && req.user.role !== 'admin' && req.user.role !== 'super_user') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const dataPointData = {
+        forecastId,
+        ...req.body
+      };
+      
+      // Validate with schema
+      const result = insertCashFlowDataPointSchema.safeParse(dataPointData);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.message });
+      }
+      
+      const dataPoint = await storage.addCashFlowDataPoint(result.data);
+      res.status(201).json(dataPoint);
+    } catch (error) {
+      console.error("Error adding cash flow data point:", error);
+      res.status(500).json({ message: "Failed to add cash flow data point" });
+    }
+  });
+  
   // News API routes
   
   // Get UK economic news
