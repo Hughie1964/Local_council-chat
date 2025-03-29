@@ -10,6 +10,9 @@ import GroupChatDetail from "@/pages/GroupChatDetail";
 import { SuperUserDashboard } from "@/pages/SuperUserDashboard";
 import UserTradeLog from "@/pages/UserTradeLog";
 import News from "@/pages/News";
+import Forecasting from "@/pages/Forecasting";
+import Documents from "@/pages/Documents";
+import CalendarPage from "@/pages/CalendarPage";
 import NotFound from "@/pages/not-found";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationDisplay } from "@/components/NotificationDisplay";
@@ -25,6 +28,9 @@ function Router() {
       <ProtectedRoute path="/super-user-dashboard" component={SuperUserDashboard} />
       <ProtectedRoute path="/my-trades" component={UserTradeLog} />
       <ProtectedRoute path="/news" component={News} />
+      <ProtectedRoute path="/forecasting" component={Forecasting} />
+      <ProtectedRoute path="/documents" component={Documents} />
+      <ProtectedRoute path="/calendar" component={CalendarPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route component={NotFound} />

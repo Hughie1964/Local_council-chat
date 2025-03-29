@@ -235,62 +235,100 @@ export const ChatContainer: FC<ChatContainerProps> = ({
   
   // Handle calendar-related actions
   const handleCalendarAction = (action: string, params?: Record<string, any>) => {
-    // Placeholder: Would implement routing/API calls for calendar actions
+    // First notify the user
     toast({
       title: "Calendar Action",
       description: `${action.charAt(0).toUpperCase() + action.slice(1)} calendar feature triggered.`
     });
     
-    // Here we would route to the calendar page or open a modal
-    // window.location.href = '/calendar';
+    // Now perform actual navigation to the calendar page
+    if (typeof window !== 'undefined') {
+      // Save any state if needed
+      
+      // Navigate to calendar page
+      setTimeout(() => {
+        window.location.href = '/calendar';
+      }, 100);
+    }
   };
   
   // Handle document-related actions
   const handleDocumentsAction = (action: string, params?: Record<string, any>) => {
-    // Placeholder: Would implement routing/API calls for document actions
+    // First notify the user
     toast({
       title: "Documents Action",
       description: `${action.charAt(0).toUpperCase() + action.slice(1)} documents feature triggered.`
     });
     
-    // Here we would route to the documents page or open a modal
-    // window.location.href = '/documents';
+    // Now perform actual navigation to the documents page
+    if (typeof window !== 'undefined') {
+      // Save any state if needed
+      
+      // Navigate to documents page
+      setTimeout(() => {
+        window.location.href = '/documents';
+      }, 100);
+    }
   };
   
   // Handle forecasting-related actions
   const handleForecastingAction = (action: string, params?: Record<string, any>) => {
-    // Placeholder: Would implement routing/API calls for forecasting actions
+    // First notify the user
     toast({
       title: "Forecasting Action",
       description: `${action.charAt(0).toUpperCase() + action.slice(1)} forecasting feature triggered.`
     });
     
-    // Here we would route to the forecasting page or open a modal
-    // window.location.href = '/forecasting';
+    // Now perform actual navigation to the forecasting page
+    // window.location.href = '/forecasting';  // This causes a full page reload
+    
+    // Let's navigate programmatically instead
+    if (typeof window !== 'undefined') {
+      // Save any state if needed
+      
+      // Navigate to forecasting page
+      setTimeout(() => {
+        window.location.href = '/forecasting';
+      }, 100);
+    }
   };
   
   // Handle trade-related actions
   const handleTradesAction = (action: string, params?: Record<string, any>) => {
-    // Placeholder: Would implement routing/API calls for trade actions
+    // First notify the user
     toast({
       title: "Trades Action",
       description: `${action.charAt(0).toUpperCase() + action.slice(1)} trades feature triggered.`
     });
     
-    // Here we would route to the trades page or open a modal
-    // window.location.href = '/trades';
+    // Now perform actual navigation to the trades page
+    if (typeof window !== 'undefined') {
+      // Save any state if needed
+      
+      // Navigate to trades page
+      setTimeout(() => {
+        window.location.href = '/my-trades';
+      }, 100);
+    }
   };
   
   // Handle quote-related actions
   const handleQuotesAction = (action: string, params?: Record<string, any>) => {
-    // Placeholder: Would implement routing/API calls for quote actions
+    // First notify the user
     toast({
       title: "Quotes Action",
       description: `${action.charAt(0).toUpperCase() + action.slice(1)} quotes feature triggered.`
     });
     
-    // Here we would route to the quotes page or open a modal
-    // window.location.href = '/quotes';
+    // Now perform actual navigation to the trades page with quotes tab
+    if (typeof window !== 'undefined') {
+      // Save any state if needed
+      
+      // Navigate to trades page with quotes tab
+      setTimeout(() => {
+        window.location.href = '/my-trades?tab=quotes';
+      }, 100);
+    }
   };
 
   return (
