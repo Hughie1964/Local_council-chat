@@ -287,10 +287,229 @@ export async function analyzeInterestRatesForCouncils(rateInfo: string): Promise
 }
 
 /**
+ * Check if a message is asking about calendar events
+ */
+function isAskingAboutCalendar(message: string): boolean {
+  const lowerCaseMsg = message.toLowerCase();
+  
+  const calendarKeywords = [
+    'calendar',
+    'schedule',
+    'event',
+    'meeting',
+    'appointment',
+    'agenda',
+    'upcoming',
+    'planned',
+    'financial calendar',
+    'events',
+    'when is',
+    'dates',
+    'timetable'
+  ];
+  
+  const actionKeywords = [
+    'show',
+    'see',
+    'view',
+    'get',
+    'display',
+    'list',
+    'check',
+    'tell me',
+    'what are',
+    'upcoming',
+    'this week',
+    'this month',
+    'next week'
+  ];
+  
+  // Direct calendar requests
+  const directRequests = [
+    'show me the calendar',
+    'show calendar',
+    'view calendar',
+    'financial calendar',
+    'check calendar',
+    'view my events',
+    'show events',
+    'upcoming events',
+    'show me the financial calendar',
+    'calendar events',
+    'view the financial calendar'
+  ];
+  
+  // Check direct matches first
+  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
+    return true;
+  }
+  
+  // Check for combinations of calendar terms and action terms
+  const hasCalendarTerm = calendarKeywords.some(term => lowerCaseMsg.includes(term));
+  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
+  
+  return hasCalendarTerm && hasActionTerm;
+}
+
+/**
+ * Check if a message is asking about documents
+ */
+function isAskingAboutDocuments(message: string): boolean {
+  const lowerCaseMsg = message.toLowerCase();
+  
+  const documentKeywords = [
+    'document',
+    'file',
+    'report',
+    'attachment',
+    'paper',
+    'pdf',
+    'spreadsheet',
+    'financial report',
+    'statement',
+    'policy',
+    'guidance',
+    'records'
+  ];
+  
+  const actionKeywords = [
+    'show',
+    'see',
+    'view',
+    'get',
+    'display',
+    'list',
+    'find',
+    'search',
+    'upload',
+    'download',
+    'share',
+    'manage'
+  ];
+  
+  // Direct document requests
+  const directRequests = [
+    'show me the documents',
+    'show documents',
+    'view documents',
+    'document list',
+    'my documents',
+    'shared documents',
+    'document management',
+    'search documents',
+    'recent documents',
+    'show me my documents'
+  ];
+  
+  // Check direct matches first
+  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
+    return true;
+  }
+  
+  // Check for combinations of document terms and action terms
+  const hasDocumentTerm = documentKeywords.some(term => lowerCaseMsg.includes(term));
+  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
+  
+  return hasDocumentTerm && hasActionTerm;
+}
+
+/**
+ * Check if a message is asking about forecasting or trends
+ */
+function isAskingAboutForecasting(message: string): boolean {
+  const lowerCaseMsg = message.toLowerCase();
+  
+  const forecastKeywords = [
+    'forecast',
+    'predict',
+    'projection',
+    'outlook',
+    'future',
+    'trend',
+    'analysis',
+    'cash flow',
+    'interest rate',
+    'rate forecast',
+    'financial forecast',
+    'projected'
+  ];
+  
+  const actionKeywords = [
+    'show',
+    'see',
+    'view',
+    'get',
+    'display',
+    'analyze',
+    'predict',
+    'project',
+    'what will',
+    'how will',
+    'going to'
+  ];
+  
+  // Direct forecast requests
+  const directRequests = [
+    'show me the forecast',
+    'view forecasts',
+    'interest rate trends',
+    'cash flow forecast',
+    'forecasting tools',
+    'rate predictions',
+    'future rates',
+    'show me the projections',
+    'financial forecasts',
+    'show me interest rate trends'
+  ];
+  
+  // Check direct matches first
+  if (directRequests.some(phrase => lowerCaseMsg.includes(phrase))) {
+    return true;
+  }
+  
+  // Check for combinations of forecast terms and action terms
+  const hasForecastTerm = forecastKeywords.some(term => lowerCaseMsg.includes(term));
+  const hasActionTerm = actionKeywords.some(term => lowerCaseMsg.includes(term));
+  
+  return hasForecastTerm && hasActionTerm;
+}
+
+/**
  * Generate a response to a user's chat message in the context of UK local council money markets
  */
 export async function generateChatResponse(message: string): Promise<string> {
   try {
+    // First, check if this is a command to access a professional feature
+    if (isAskingAboutCalendar(message)) {
+      console.log("User is asking about calendar events");
+      return `{
+        "isFeatureRequest": true,
+        "feature": "calendar",
+        "action": "view",
+        "message": "Here's the financial calendar you requested. You can see all upcoming events, filter by category, or add new events."
+      }`;
+    }
+    
+    if (isAskingAboutDocuments(message)) {
+      console.log("User is asking about documents");
+      return `{
+        "isFeatureRequest": true,
+        "feature": "documents",
+        "action": "view",
+        "message": "Here are the council documents available. You can filter by type, search by keywords, or share documents with other councils."
+      }`;
+    }
+    
+    if (isAskingAboutForecasting(message)) {
+      console.log("User is asking about forecasting or trends");
+      return `{
+        "isFeatureRequest": true,
+        "feature": "forecasting",
+        "action": "view",
+        "message": "Here are the forecasting tools you requested. You can view interest rate trends, create cash flow projections, or analyze financial scenarios."
+      }`;
+    }
+    
     // If in development mode and no API key is available, return sample response
     if (isDevMode) {
       console.log("Using development mode response for chat");
