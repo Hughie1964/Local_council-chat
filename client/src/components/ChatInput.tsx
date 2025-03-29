@@ -124,7 +124,36 @@ export const ChatInput: FC<ChatInputProps> = ({
     const trimmedMessage = message.trim();
     if (!trimmedMessage) return;
     
-    onSendMessage(trimmedMessage);
+    // Check for special test commands (these are just for testing feature cards)
+    if (trimmedMessage.startsWith('/feature')) {
+      const parts = trimmedMessage.split(' ');
+      if (parts.length >= 2) {
+        const featureType = parts[1].toLowerCase();
+        const action = parts.length >= 3 ? parts[2].toLowerCase() : 'view';
+        
+        // Create a feature request JSON message that mimics what would come from the server
+        const featureRequestJson = {
+          isFeatureRequest: true,
+          feature: featureType,
+          action: action,
+          params: {},
+          message: `Here are the ${featureType} options you requested.`
+        };
+        
+        // Send this as a special formatted message
+        onSendMessage(JSON.stringify(featureRequestJson));
+      } else {
+        // Show help for feature commands
+        toast({
+          title: "Feature Command Help",
+          description: "Usage: /feature [type] [action]. Example: /feature calendar view"
+        });
+      }
+    } else {
+      // Regular message handling
+      onSendMessage(trimmedMessage);
+    }
+    
     setMessage("");
   };
 
@@ -179,11 +208,13 @@ export const ChatInput: FC<ChatInputProps> = ({
           <>
             This advisory service provides general information and analysis for council officers. 
             <span className="block mt-1">Click the microphone icon to use voice commands.</span>
+            <span className="block mt-1 text-primary">Tip: Try "/feature calendar" or "/feature documents" for quick access to features.</span>
           </>
         ) : (
           <>
             This advisory service provides general information and analysis for council officers. 
             Always consult with your Section 151 Officer before making financial decisions.
+            <span className="block mt-1 text-primary">Tip: Try "/feature calendar" or "/feature documents" for quick access to features.</span>
           </>
         )}
       </div>
