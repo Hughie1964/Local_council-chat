@@ -7,9 +7,11 @@ import { analyzeMessageForTrade } from "./trade-analyzer";
 import { fetchUKEconomicNews, fetchUKFinancialHeadlines } from './news-service';
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { insertMessageSchema, insertTradeSchema, updateTradeSchema } from "@shared/schema";
+import { insertMessageSchema, insertTradeSchema, updateTradeSchema, councils } from "@shared/schema";
 import { WebSocketServer, WebSocket } from 'ws';
 import { setupAuth } from "./auth";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // Type for chat request body
 const chatRequestSchema = z.object({
@@ -28,32 +30,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check if user is authenticated
       if (!req.isAuthenticated()) {
+        console.log("ROUTE: User not authenticated, returning default council");
         // Return default council for unauthenticated users (for demo purposes)
         const defaultCouncil = {
           id: 1,
           name: "Birmingham City Council",
-          councilId: "BCC-4578", 
-          financialYear: "2023/24"
+          councilId: "BCC-001", 
+          financialYear: "2024-2025"
         };
         return res.json(defaultCouncil);
       }
       
       // Get the authenticated user
       const user = req.user;
-      console.log("User council lookup for:", user.username, "councilId:", user.councilId);
+      console.log("ROUTE: User council lookup for:", user.username, "councilId:", user.councilId);
+      console.log("ROUTE: Full user object:", JSON.stringify(user));
       
       // If user has a councilId, use it to look up their council
       if (user.councilId) {
         // Try to find the user's council in the database by councilId
-        console.log("Looking up council with councilId:", user.councilId);
+        console.log("ROUTE: Looking up council with councilId:", user.councilId);
+        
+        // Directly query for the Kinross council as a test
+        const [directKinrossCouncil] = await db.select().from(councils).where(eq(councils.councilId, "Kinross"));
+        console.log("ROUTE: Direct DB lookup for Kinross:", directKinrossCouncil);
+        
         const userCouncil = await storage.getCouncilByCouncilId(user.councilId);
         
         if (userCouncil) {
-          console.log("Found council:", userCouncil);
+          console.log("ROUTE: Found council:", userCouncil);
           return res.json(userCouncil);
         }
         
-        console.log("Council not found in database");
+        console.log("ROUTE: Council not found in database");
         // If the council can't be found but user has councilId,
         // create a basic council with the ID
         const customCouncil = {
@@ -67,17 +76,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If the user doesn't have a councilId, return the default council
-      console.log("User has no councilId, returning default council");
+      console.log("ROUTE: User has no councilId, returning default council");
       const defaultCouncil = {
         id: 1,
         name: "Birmingham City Council",
-        councilId: "BCC-4578",
+        councilId: "BCC-001",
         financialYear: "2024-2025"
       };
       
       res.json(defaultCouncil);
     } catch (error) {
-      console.error("Error fetching council information:", error);
+      console.error("ROUTE Error fetching council information:", error);
       res.status(500).json({ message: "Failed to fetch council information" });
     }
   });

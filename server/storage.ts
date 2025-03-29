@@ -86,11 +86,20 @@ export class DatabaseStorage implements IStorage {
   
   // Council methods
   async getCouncilByCouncilId(councilId: string): Promise<Council | undefined> {
-    const [council] = await db
-      .select()
-      .from(councils)
-      .where(eq(councils.councilId, councilId));
-    return council;
+    console.log("STORAGE: Looking up council with councilId:", councilId);
+    
+    try {
+      const [council] = await db
+        .select()
+        .from(councils)
+        .where(eq(councils.councilId, councilId));
+      
+      console.log("STORAGE: Found council:", council);
+      return council;
+    } catch (error) {
+      console.error("STORAGE: Error fetching council:", error);
+      return undefined;
+    }
   }
   
   // Session methods
