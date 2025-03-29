@@ -5,6 +5,7 @@ import { generateChatResponse, generateSessionTitle } from "./openai";
 import { scrapeUKRates } from "./rates-scraper";
 import { analyzeMessageForTrade } from "./trade-analyzer";
 import { fetchUKEconomicNews, fetchUKFinancialHeadlines } from './news-service';
+import { checkUpcomingMaturities } from './maturity-reminder';
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -1587,6 +1588,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ success: false, message: "Failed to send test notification" });
     }
   });
+
+  // Test the maturity reminder system
+  app.get("/api/test-maturity-reminders", async (_req: Request, res: Response) => {
+    try {
+      await checkUpcomingMaturities(wss);
+      res.json({ success: true, message: "Maturity check initiated" });
+    } catch (error) {
+      console.error("Error running maturity check:", error);
+      res.status(500).json({ message: "Failed to run maturity check" });
+    }
+  });
+
+  // Set up scheduled check for upcoming maturities
+  // Check once daily at midnight
+  const MATURITY_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+  
+  // Initial check when the server starts
+  setTimeout(() => {
+    console.log("Running initial check for upcoming maturities...");
+    checkUpcomingMaturities(wss).catch(err => {
+      console.error("Error in initial maturity check:", err);
+    });
+  }, 10000); // 10-second delay to ensure everything is initialized
+  
+  // Schedule regular checks
+  setInterval(() => {
+    console.log("Running scheduled check for upcoming maturities...");
+    checkUpcomingMaturities(wss).catch(err => {
+      console.error("Error in scheduled maturity check:", err);
+    });
+  }, MATURITY_CHECK_INTERVAL);
 
   return httpServer;
 }

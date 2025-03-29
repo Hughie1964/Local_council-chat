@@ -101,7 +101,10 @@ export interface IStorage {
   createTrade(trade: InsertTrade): Promise<Trade>;
   getTrade(id: number): Promise<Trade | undefined>;
   getTrades(status?: "negotiation" | "pending" | "approved" | "rejected" | "executed"): Promise<Trade[]>;
+  getAllTrades(): Promise<Trade[]>;
   getUserTrades(userId: number): Promise<Trade[]>;
+  getUserSessions(userId: number): Promise<Session[]>;
+  addSessionMessage(message: InsertMessage & { userId: number }): Promise<Message>;
   updateTradeStatus(tradeId: number, update: UpdateTrade): Promise<Trade | undefined>;
   
   // Document methods
@@ -348,6 +351,63 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trades.id, tradeId))
       .returning();
     return updatedTrade;
+  }
+  
+  async getAllTrades(): Promise<Trade[]> {
+    return await db
+      .select()
+      .from(trades)
+      .orderBy(desc(trades.createdAt));
+  }
+  
+  async getUserSessions(userId: number): Promise<Session[]> {
+    // Get all sessions where this user has sent messages
+    const userMessageGroups = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.isUser, true))
+      .groupBy(messages.sessionId);
+      
+    // Map to session IDs
+    const sessionIds = userMessageGroups.map(msg => msg.sessionId);
+    
+    // Get the sessions
+    if (sessionIds.length === 0) {
+      return [];
+    }
+    
+    // Build the OR condition properly for the query
+    if (sessionIds.length === 1) {
+      const userSessions = await db
+        .select()
+        .from(sessions)
+        .where(eq(sessions.sessionId, sessionIds[0]))
+        .orderBy(desc(sessions.timestamp));
+        
+      return userSessions;
+    } else {
+      const userSessions = await db
+        .select()
+        .from(sessions)
+        .where(
+          or(...sessionIds.map(sid => eq(sessions.sessionId, sid)))
+        )
+        .orderBy(desc(sessions.timestamp));
+        
+      return userSessions;
+    }
+  }
+  
+  async addSessionMessage(message: InsertMessage & { userId: number }): Promise<Message> {
+    // Remove userId from the message object since it's not part of InsertMessage
+    const { userId, ...insertMessage } = message;
+    
+    const [newMessage] = await db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
+      
+    return newMessage;
   }
   
   // Document methods
