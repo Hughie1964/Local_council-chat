@@ -89,9 +89,18 @@ export const Sidebar: FC<SidebarProps> = ({
             <h2 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">
               Council Information
             </h2>
-            <div className="bg-neutral-100 rounded-lg p-3 mb-3">
+            <div className="bg-neutral-100 rounded-lg p-3 mb-3 relative">
+              {user && (
+                <div className="absolute top-2 right-2 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                  <span className="text-xs text-green-600 font-medium">Online</span>
+                </div>
+              )}
               <p className="text-sm font-medium">{council?.name || "Loading council..."}</p>
               <p className="text-xs text-secondary/70">{`ID: ${council?.councilId || "..."}`}</p>
+              {user && (
+                <p className="text-xs text-primary mt-1">Logged in as {user.username}</p>
+              )}
             </div>
             <div className="flex items-center justify-between text-xs text-secondary/70">
               <span>Financial Year: {council?.financialYear || "..."}</span>
