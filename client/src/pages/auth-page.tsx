@@ -35,6 +35,7 @@ const loginSchema = z.object({
 
 // Registration form schema
 const registerSchema = z.object({
+  councilId: z.string().optional(),
   username: z.string().min(2, "Username must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z
@@ -45,7 +46,6 @@ const registerSchema = z.object({
       "Password must include uppercase, lowercase, number and special character"
     ),
   confirmPassword: z.string(),
-  councilId: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -204,6 +204,19 @@ export default function AuthPage() {
                     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                       <FormField
                         control={registerForm.control}
+                        name="councilId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>County Council</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter your County Council" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
                         name="username"
                         render={({ field }) => (
                           <FormItem>
@@ -223,19 +236,6 @@ export default function AuthPage() {
                             <FormLabel>Email</FormLabel>
                             <FormControl>
                               <Input type="email" placeholder="your.email@example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="councilId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Council ID (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your council ID" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
