@@ -8,6 +8,12 @@ export const userRoleEnum = pgEnum("user_role", ["user", "admin", "super_user"])
 // Trade status enum
 export const tradeStatusEnum = pgEnum("trade_status", ["negotiation", "pending", "approved", "rejected", "executed"]);
 
+// Document type enum
+export const documentTypeEnum = pgEnum("document_type", ["treasury_strategy", "investment_policy", "debt_agreement", "meeting_minutes", "report", "other"]);
+
+// Document access level enum
+export const accessLevelEnum = pgEnum("access_level", ["private", "council", "group", "public"]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
