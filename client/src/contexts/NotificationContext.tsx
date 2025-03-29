@@ -16,7 +16,7 @@ interface NotificationContextType {
 
 interface Notification {
   id: string; // Unique identifier for the notification
-  type: 'new_message' | 'trade_update' | 'system'; // Type of notification
+  type: 'new_message' | 'trade_update' | 'system' | 'maturity_reminder'; // Type of notification
   content: string; // Content of the notification
   timestamp: string; // Timestamp of when the notification was created
   read: boolean; // Whether the notification has been read
@@ -82,12 +82,34 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       addNotification(notification);
     };
     
+    // Handle maturity reminders
+    const handleMaturityReminder = (data: any) => {
+      if (!data.message) return;
+      
+      // Create a notification for the maturity reminder
+      const notification: Notification = {
+        id: `maturity-${Date.now()}`,
+        type: 'maturity_reminder',
+        content: `Maturity reminder: ${data.message.content}`,
+        timestamp: data.message.timestamp || new Date().toISOString(),
+        read: false,
+        data: {
+          ...data.message,
+          isMaturityReminder: true // Add the flag to identify this as a maturity reminder
+        }
+      };
+      
+      addNotification(notification);
+    };
+
     websocketService.addListener('new_message', handleNewMessage);
     websocketService.addListener('trade_update', handleTradeUpdate);
+    websocketService.addListener('maturity_reminder', handleMaturityReminder);
     
     return () => {
       websocketService.removeListener('new_message', handleNewMessage);
       websocketService.removeListener('trade_update', handleTradeUpdate);
+      websocketService.removeListener('maturity_reminder', handleMaturityReminder);
     };
   }, []);
   

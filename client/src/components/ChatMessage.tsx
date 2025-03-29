@@ -33,13 +33,20 @@ export const ChatMessage: FC<ChatMessageProps> = ({ message, onFeatureAction }) 
     </div>
   );
 
-  const contentWithHtml = message.content.replace(/\n/g, "<br>");
+  // Check if message.content exists before processing
+  const contentWithHtml = message.content 
+    ? message.content.replace(/\n/g, "<br>")
+    : message.isMaturityReminder 
+      ? message.content 
+      : "Message content unavailable";
   
   // Handle tables with a simple solution that doesn't use the 's' flag
-  const tableFormattedContent = contentWithHtml.replace(
-    /<table([^>]*)>([\s\S]*?)<\/table>/g,
-    (match) => `<div class="bg-white rounded-md border border-neutral-300 p-2 my-2 overflow-auto">${match}</div>`
-  );
+  const tableFormattedContent = contentWithHtml && typeof contentWithHtml === 'string'
+    ? contentWithHtml.replace(
+        /<table([^>]*)>([\s\S]*?)<\/table>/g,
+        (match) => `<div class="bg-white rounded-md border border-neutral-300 p-2 my-2 overflow-auto">${match}</div>`
+      )
+    : contentWithHtml;
 
   // Function to render feature cards for professional features
   const renderFeatureCard = (featureRequest: FeatureRequest) => {

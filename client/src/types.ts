@@ -14,6 +14,7 @@ export interface Message {
   timestamp: string;
   loading?: boolean;
   featureRequest?: FeatureRequest; // Optional feature request info
+  isMaturityReminder?: boolean; // Flag for maturity reminder messages
 }
 
 export interface Session {

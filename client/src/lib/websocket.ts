@@ -139,8 +139,8 @@ class WebSocketService {
           });
         }
       }
-      // Direct handling of message and trade events without notification wrapper
-      else if (message.type === 'new_message' || message.type === 'trade_update') {
+      // Direct handling of message, trade events, and maturity reminders without notification wrapper
+      else if (message.type === 'new_message' || message.type === 'trade_update' || message.type === 'maturity_reminder') {
         console.log(`Direct ${message.type} received:`, message);
         const typeListeners = this.listeners.get(message.type);
         
