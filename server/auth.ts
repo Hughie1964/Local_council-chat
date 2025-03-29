@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import rateLimit from "express-rate-limit";
+import { setVerificationTokenForUser, sendVerificationEmail, verifyUserWithToken } from "./email-service";
 
 declare global {
   namespace Express {
@@ -86,11 +87,11 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, councilId, role = "user" } = req.body;
+      const { username, email, password, councilId, role = "user" } = req.body;
       
       // Check for required fields
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: "Username, email, and password are required" });
       }
       
       // Check if username already exists
@@ -103,19 +104,66 @@ export function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
         username,
+        email,
         password: hashedPassword,
         councilId,
         role,
       });
 
+      // Generate and set a verification token
+      const token = await setVerificationTokenForUser(user.id);
+      if (token) {
+        // Send a verification email (in this case, just log it to console)
+        await sendVerificationEmail(user, token);
+      }
+
       // Log in the new user
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json({
+          ...user,
+          emailVerificationPending: !user.isVerified,
+        });
       });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+  
+  // Email verification route
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
+      
+      const success = await verifyUserWithToken(token);
+      
+      if (success) {
+        // If the user is logged in, update their session
+        if (req.isAuthenticated() && req.user) {
+          req.user.isVerified = true;
+        }
+        
+        return res.status(200).json({ 
+          message: "Email verified successfully",
+          success: true 
+        });
+      } else {
+        return res.status(400).json({ 
+          message: "Invalid or expired verification token",
+          success: false
+        });
+      }
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ 
+        message: "Failed to verify email",
+        success: false
+      });
     }
   });
 

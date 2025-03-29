@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Chat from "@/pages/Chat";
 import AuthPage from "@/pages/auth-page";
+import VerifyEmailPage from "@/pages/verify-email";
 import Groups from "@/pages/Groups";
 import GroupChatDetail from "@/pages/GroupChatDetail";
 import { SuperUserDashboard } from "@/pages/SuperUserDashboard";
@@ -25,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/my-trades" component={UserTradeLog} />
       <ProtectedRoute path="/news" component={News} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
       <Route component={NotFound} />
     </Switch>
   );

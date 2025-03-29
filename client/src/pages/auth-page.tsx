@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Login form schema
 const loginSchema = z.object({
@@ -34,6 +36,7 @@ const loginSchema = z.object({
 // Registration form schema
 const registerSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -53,7 +56,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
+  const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
   const { user, loginMutation, registerMutation } = useAuth();
+  const { toast } = useToast();
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -69,11 +74,24 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       confirmPassword: "",
       councilId: "",
     },
   });
+
+  // Effect to observe registration mutation success
+  useEffect(() => {
+    if (registerMutation.isSuccess) {
+      setRegistrationSuccess(true);
+      toast({
+        title: "Account created successfully",
+        description: "Please check your email for a verification link.",
+        variant: "default",
+      });
+    }
+  }, [registerMutation.isSuccess, toast]);
 
   // Handle login form submission
   const onLoginSubmit = (values: LoginFormValues) => {
@@ -175,6 +193,13 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {registrationSuccess && (
+                    <Alert className="mb-4 bg-green-50 border-green-200">
+                      <AlertDescription className="text-green-800">
+                        Account created successfully! Please check your email for a verification link.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <Form {...registerForm}>
                     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                       <FormField
@@ -185,6 +210,19 @@ export default function AuthPage() {
                             <FormLabel>Username</FormLabel>
                             <FormControl>
                               <Input placeholder="Choose a username" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="your.email@example.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

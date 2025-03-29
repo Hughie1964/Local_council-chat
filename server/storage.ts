@@ -27,6 +27,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserRole(userId: number, role: "user" | "admin" | "super_user"): Promise<User | undefined>;
   getSuperUsers(): Promise<User[]>;
+  verifyUser(verificationToken: string): Promise<User | undefined>;
+  updateUserVerificationToken(userId: number, token: string, expiry: Date): Promise<User | undefined>;
   
   // Council methods
   getCouncilByCouncilId(councilId: string): Promise<Council | undefined>;
@@ -63,9 +65,52 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        isVerified: false,
+        verificationToken: null,
+        tokenExpiry: null
+      })
       .returning();
     return user;
+  }
+  
+  async verifyUser(verificationToken: string): Promise<User | undefined> {
+    // Find user with the given verification token
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.verificationToken, verificationToken));
+    
+    if (!user || !user.tokenExpiry || new Date(user.tokenExpiry) < new Date()) {
+      return undefined;
+    }
+    
+    // Update user to verified
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        isVerified: true,
+        verificationToken: null,
+        tokenExpiry: null
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+      
+    return updatedUser;
+  }
+  
+  async updateUserVerificationToken(userId: number, token: string, expiry: Date): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        verificationToken: token,
+        tokenExpiry: expiry
+      })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    return updatedUser;
   }
   
   async updateUserRole(userId: number, role: "user" | "admin" | "super_user"): Promise<User | undefined> {
@@ -232,9 +277,11 @@ export class DatabaseStorage implements IStorage {
         .insert(users)
         .values({
           username: "user",
+          email: "user@example.com",
           password: userPassword,
           role: "user",
-          councilId: "BCC-001"
+          councilId: "BCC-001",
+          isVerified: true
         })
         .returning();
       
@@ -242,9 +289,11 @@ export class DatabaseStorage implements IStorage {
         .insert(users)
         .values({
           username: "admin",
+          email: "admin@example.com",
           password: adminPassword,
           role: "admin",
-          councilId: "BCC-001"
+          councilId: "BCC-001",
+          isVerified: true
         })
         .returning();
       
@@ -252,9 +301,11 @@ export class DatabaseStorage implements IStorage {
         .insert(users)
         .values({
           username: "super_user",
+          email: "super@example.com",
           password: adminPassword,
           role: "super_user",
-          councilId: "BCC-001"
+          councilId: "BCC-001",
+          isVerified: true
         })
         .returning();
       

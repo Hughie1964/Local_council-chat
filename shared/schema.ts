@@ -11,9 +11,13 @@ export const tradeStatusEnum = pgEnum("trade_status", ["negotiation", "pending",
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   role: userRoleEnum("role").notNull().default("user"),
   councilId: text("council_id"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationToken: text("verification_token"),
+  tokenExpiry: timestamp("token_expiry"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -64,6 +68,7 @@ export const sessions = pgTable("sessions", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   password: true,
   role: true,
   councilId: true,
